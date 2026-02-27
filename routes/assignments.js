@@ -1,9 +1,13 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { authenticateJWT, requireRole } = require('../middleware/auth');
+import express from 'express';
+import mongoose from 'mongoose';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { authenticateJWT, requireRole } from '../middleware/auth.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -80,4 +84,4 @@ router.post('/:id/submit', authenticateJWT, requireRole('student'), upload.array
   } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
 });
 
-module.exports = router;
+export default router;
