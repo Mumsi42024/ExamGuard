@@ -30,6 +30,17 @@ const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, 'logs');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 const TRUST_PROXY = process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1';
+const examsRouter = require('./routes/exams');
+const aiRouter = require('./routes/ai');
+const submissionsRouter = require('./routes/submissions');
+const invoicesRouter = require('./routes/invoices');
+const resourcesRouter = require('./routes/resources');
+const messagesRouter = require('./routes/messages');
+const assignmentsRouter = require('./routes/assignments');
+const timetableRouter = require('./routes/timetable');
+const studentsRouter = require('./routes/students');
+const resultsRouter = require('./routes/results');
+
 
 // create directories if needed
 fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -144,6 +155,16 @@ app.use((req, res, next) => {
 
 // --- Error handler (JSON) ---
 /* eslint-disable no-unused-vars */
+app.use('/api/exams', examsRouter);
+app.use('/api/ai', aiRouter);
+app.use('/api/submissions', submissionsRouter);
+app.use('/api/invoices', invoicesRouter);
+app.use('/api/resources', resourcesRouter);
+app.use('/api/messages', messagesRouter);
+app.use('/api/assignments', assignmentsRouter);
+app.use('/api/timetable', timetableRouter);
+app.use('/api/students', studentsRouter);
+app.use('/api/results', resultsRouter);
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err && err.stack ? err.stack : err);
   const status = err.status || 500;
