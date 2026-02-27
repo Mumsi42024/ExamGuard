@@ -1,23 +1,25 @@
-
-
 'use strict';
 
-require('dotenv').config();
-const path = require('path');
-const fs = require('fs');
-const http = require('http');
+import 'dotenv/config';
+import path from 'path';
+import fs from 'fs';
+import http from 'http';
+import url from 'url';
 
-const express = require('express');
-const helmet = require('helmet');
-const cors = require('cors');
-const compression = require('compression');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
-const hpp = require('hpp');
-const cookieParser = require('cookie-parser');
-const mongoose = require('mongoose');
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import compression from 'compression';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
+import mongoose from 'mongoose';
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -30,17 +32,19 @@ const LOG_DIR = process.env.LOG_DIR || path.join(__dirname, 'logs');
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 const TRUST_PROXY = process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1';
-const examsRouter = require('./routes/exams');
-const aiRouter = require('./routes/ai');
-const submissionsRouter = require('./routes/submissions');
-const invoicesRouter = require('./routes/invoices');
-const resourcesRouter = require('./routes/resources');
-const messagesRouter = require('./routes/messages');
-const assignmentsRouter = require('./routes/assignments');
-const timetableRouter = require('./routes/timetable');
-const studentsRouter = require('./routes/students');
-const resultsRouter = require('./routes/results');
 
+// Note: when importing CommonJS modules, the default export contains module.exports.
+// Adjust imports below if your route files are ESM or CJS accordingly.
+import examsRouter from './routes/exams.js';
+import aiRouter from './routes/ai.js';
+import submissionsRouter from './routes/submissions.js';
+import invoicesRouter from './routes/invoices.js';
+import resourcesRouter from './routes/resources.js';
+import messagesRouter from './routes/messages.js';
+import assignmentsRouter from './routes/assignments.js';
+import timetableRouter from './routes/timetable.js';
+import studentsRouter from './routes/students.js';
+import resultsRouter from './routes/results.js';
 
 // create directories if needed
 fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -125,18 +129,14 @@ mongoose.connect(MONGODB_URI, {
 
 // --- Import routers (ensure these files exist) ---
 // routes provided earlier: ./routes/auth.js, ./routes/application.js
-const authRouter = require('./routes/auth');
-const applicationRouter = require('./routes/application');
+import authRouter from './routes/auth.js';
+import applicationRouter from './routes/application.js';
 
 // mount auth router with auth-specific rate limiter
 app.use('/api/auth', authLimiter, authRouter);
 
 // mount application route (multipart handling done in router)
 app.use('/api/application', applicationRouter);
-
-// Example: other routers (teachers, exams, admin) can be mounted similarly when available:
-// const examsRouter = require('./routes/exams');
-// app.use('/api/exams', examsRouter);
 
 // --- Example simple admin endpoints (optional quick info) ---
 app.get('/api/info', (req, res) => {
@@ -209,5 +209,5 @@ function shutdown(sig) {
 process.on('SIGTERM', shutdown('SIGTERM'));
 process.on('SIGINT', shutdown('SIGINT'));
 
-// Export app for testing
-module.exports = app;
+// Export app for testing (ESM)
+export default app;
