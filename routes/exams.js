@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const { authenticateJWT, requireRole } = require('../middleware/auth');
+import express from 'express';
+import mongoose from 'mongoose';
+import { authenticateJWT, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -84,4 +84,4 @@ router.delete('/:id', authenticateJWT, requireRole('admin'), async (req,res) => 
   } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
 });
 
-module.exports = router;
+export default router;
