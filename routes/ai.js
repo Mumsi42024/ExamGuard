@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const { authenticateJWT, requireRole } = require('../middleware/auth');
+import express from 'express';
+import mongoose from 'mongoose';
+import { authenticateJWT, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -16,36 +16,34 @@ const AiQuizSchema = new mongoose.Schema({
 const AiQuiz = mongoose.models.AiQuiz || mongoose.model('AiQuiz', AiQuizSchema);
 
 // POST /api/ai/generate
-// Requires authentication (teachers/students can generate), stores generated set
 router.post('/generate', authenticateJWT, async (req, res) => {
   try {
     const { topic = 'General', difficulty = 'medium', count = 10 } = req.body || {};
-    // In production: call real AI service here. For now simulate.
     const questions = [];
-    for (let i=1;i<=Number(count);i++){
+    for (let i = 1; i <= Number(count); i++) {
       questions.push({
         id: `AI-${Date.now()}-${i}`,
         q: `${topic} — AI generated question ${i} (${difficulty})`,
-        choices: ['A','B','C','D']
+        choices: ['A', 'B', 'C', 'D']
       });
     }
     const quiz = new AiQuiz({
       topic, difficulty, count: questions.length, questions, createdBy: req.user.id
     });
     await quiz.save();
-    res.status(201).json({ ok:true, id: quiz._id.toString(), topic, difficulty, count: questions.length });
+    res.status(201).json({ ok: true, id: quiz._id.toString(), topic, difficulty, count: questions.length });
   } catch (err) {
-    console.error(err); res.status(500).json({ ok:false, message:'Server error' });
+    console.error(err); res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
 
-// GET /api/ai/:id - retrieve quiz (protected)
-router.get('/:id', authenticateJWT, async (req,res) => {
+// GET /api/ai/:id
+router.get('/:id', authenticateJWT, async (req, res) => {
   try {
     const quiz = await AiQuiz.findById(req.params.id).lean();
-    if (!quiz) return res.status(404).json({ ok:false, message:'Not found' });
-    res.json({ ok:true, quiz });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    if (!quiz) return res.status(404).json({ ok: false, message: 'Not found' });
+    res.json({ ok: true, quiz });
+  } catch (err) { console.error(err); res.status(500).json({ ok: false, message: 'Server error' }); }
 });
 
-module.exports = router;
+export default router;
