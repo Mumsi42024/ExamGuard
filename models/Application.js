@@ -56,4 +56,35 @@ ApplicationSchema.pre('save', function (next) {
   next();
 });
 
+// safe serializer (do NOT expose passwordHash or files paths you don't want leaked)
+ApplicationSchema.methods.toSafeObject = function () {
+  return {
+    id: this._id.toString(),
+    username: this.username,
+    firstName: this.firstName,
+    lastName: this.lastName,
+    dob: this.dob,
+    email: this.email,
+    phone: this.phone,
+    nationality: this.nationality,
+    address: this.address,
+    intakeTerm: this.intakeTerm,
+    program: this.program,
+    currentSchool: this.currentSchool,
+    currentGrade: this.currentGrade,
+    prevAcademics: this.prevAcademics,
+    // don't include raw file paths by default - include only metadata or omit entirely
+    idFiles: (this.idFiles || []).map(f => ({ filename: f.filename, originalName: f.originalName, mimeType: f.mimeType, size: f.size })),
+    transcripts: (this.transcripts || []).map(f => ({ filename: f.filename, originalName: f.originalName, mimeType: f.mimeType, size: f.size })),
+    languageProof: this.languageProof,
+    emergencyName: this.emergencyName,
+    emergencyPhone: this.emergencyPhone,
+    agree: this.agree,
+    status: this.status,
+    sourceIp: this.sourceIp,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt
+  };
+};
+
 module.exports = mongoose.model('Application', ApplicationSchema);
