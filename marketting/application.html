@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Application — New Intake | École des Roches</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Stepwise application form for national and international applicants." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --navy: #061728;
+      --gold: #f6b83f;
+      --bg: #f7fafc;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --radius: 10px;
+      --sidebar-width: 320px;
+      --max-width: 1280px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#051125;-webkit-font-smoothing:antialiased}
+    body { overflow-x: hidden; }
+    a{color:var(--navy);text-decoration:none}
+    img{max-width:100%;height:auto;display:block}
+    .page {
+      max-width: calc(var(--max-width) + 56px);
+      margin: 34px auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; padding: 12px; max-width: 100%; }
+    }
+    .app-header{
+      display:flex;align-items:center;gap:16px;padding:18px 24px;border-radius:8px;background:linear-gradient(90deg,var(--navy),#0b2740);color:#fff;margin-bottom:18px;
+      box-shadow:0 8px 28px rgba(2,11,24,0.12)
+    }
+    .app-header .brand{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold)}
+    .app-header p{margin:0;color:rgba(255,255,255,0.9);font-size:14px}
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-self: start;
+    }
+    .card {
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 10px 30px rgba(2,11,24,0.06);
+    }
+    .sidebar .card h4 {
+      margin: 0 0 8px 0;
+      font-family: 'Playfair Display', serif;
+      color: var(--navy);
+    }
+    .contact-cta {
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .contact-cta .phone {
+      font-weight:700;color:var(--navy);
+    }
+    .quick-links { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .pill { display:inline-block;padding:8px 12px;border-radius:999px;background:#f1f5f9;color:var(--navy);font-weight:700;text-decoration:none;border:1px solid rgba(2,11,24,0.04) }
+    .doc-checklist { display:flex; flex-direction:column; gap:8px; margin-top:6px; color:var(--muted); font-size:14px; }
+    .sidebar .small-img {
+      border-radius:8px;
+      overflow:hidden;
+      margin-top:6px;
+      box-shadow: 0 8px 24px rgba(2,11,24,0.08);
+    }
+    @media (max-width:900px){
+      .sidebar { display: none; }
+    }
+    .main {
+      display:flex;flex-direction:column;gap:16px;
+      min-width:0;
+    }
+    .card-large { padding:22px;border-radius:var(--radius); background:var(--card); box-shadow:0 10px 30px rgba(2,11,24,0.06) }
+    .progress-bar{height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;margin-bottom:12px}
+    .progress-bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f7d36a);width:0%}
+    .stepper{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+      min-width:0;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom:6px;
+    }
+    .stepper::-webkit-scrollbar { height:8px; }
+    .stepper::-webkit-scrollbar-thumb { background: rgba(2,11,24,0.08); border-radius:999px; }
+    .step{
+      display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:13px;flex:0 0 auto;
+      padding:6px 8px;border-radius:8px;
+    }
+    .step .circle{
+      width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);font-weight:600;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.02);
+    }
+    .step.active .circle{background:var(--navy);color:#fff}
+    .step.completed .circle{background:var(--success);color:#fff}
+    .step .label{white-space:nowrap;font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    @media (max-width:700px){.grid{grid-template-columns:1fr}}
+    label{display:block;font-weight:600;font-size:13px;margin-bottom:6px}
+    .hint{font-size:13px;color:var(--muted);margin-bottom:8px}
+    input[type="text"],input[type="email"],input[type="tel"],select,textarea,input[type="date"],input[type="password"]{
+      width:100%;padding:10px 12px;border:1px solid #e6e9ef;border-radius:8px;font-size:14px;background:#fff;
+    }
+    textarea{min-height:100px;resize:vertical}
+    .field{margin-bottom:12px}
+    .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+    .btn{padding:10px 16px;border-radius:8px;border:0;cursor:pointer;font-weight:700}
+    .btn-ghost{background:transparent;border:1px solid rgba(2,11,24,0.06)}
+    .btn-primary{background:var(--navy);color:#fff}
+    .btn-secondary{background:#f1f5f9;color:var(--navy)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .muted{color:var(--muted);font-size:13px}
+    .file-list{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+    .file-item{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid rgba(2,11,24,0.03)}
+    .file-item small{color:var(--muted)}
+    .review{display:flex;flex-direction:column;gap:8px}
+    .review-row{display:flex;gap:10px;align-items:flex-start}
+    .review-row .k{width:220px;font-weight:700;color:var(--muted)}
+    .review-row .v{flex:1;background:#fbfdff;padding:10px;border-radius:8px;border:1px solid rgba(2,11,24,0.03)}
+    .step-panel{display:none}
+    .step-panel.active{display:block}
+    .required::after{content:" *";color:var(--danger);font-weight:700;margin-left:4px;font-size:12px}
+    .notice{background:#fff7e6;border:1px solid rgba(246,184,63,0.18);padding:10px;border-radius:8px;color:#7a5a00;margin-bottom:12px}
+    input:focus,select:focus,textarea:focus,button:focus{outline:3px solid rgba(6,23,40,0.08);outline-offset:2px}
+    .form-footer{margin-top:18px;font-size:13px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main class="page" id="application-root">
+    <aside class="sidebar" aria-label="Application sidebar">
+      <div class="card">
+        <h4>Need help?</h4>
+        <div class="contact-cta">
+          <div class="phone">Admissions: +02 77 41 33 51</div>
+          <div class="muted">Mon–Fri · 09:00–17:00 (CET)</div>
+          <a class="pill" href="#" aria-label="Email admissions">Email Admissions</a>
+        </div>
+        <div style="margin-top:12px" class="quick-links">
+          <a href="#" class="muted">• How to apply</a>
+          <a href="#" class="muted">• Tuition & fees</a>
+          <a href="#" class="muted">• Scholarships</a>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Checklist</h4>
+        <div class="doc-checklist">
+          <div>• Passport / national ID</div>
+          <div>• Recent transcripts</div>
+          <div>• Language proof (if any)</div>
+          <div>• Emergency contact details</div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Admissions info</h4>
+        <div class="muted">Applications are reviewed within 5 working days. International applicants may be asked for additional documents before a visa letter is issued.</div>
+        <div class="small-img" style="margin-top:12px">
+          <img src="oaugate-770x400.jpg" alt="Campus preview">
+        </div>
+      </div>
+    </aside>
+    <section class="main" aria-labelledby="form-title">
+      <header class="app-header" role="banner">
+        <div style="display:flex;flex-direction:column">
+          <div class="brand">École des Roches</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.9)">New intake application</div>
+        </div>
+        <div style="margin-left:auto">
+          <p style="margin:0 0 0 8px;font-size:13px;color:rgba(255,255,255,0.9)">Please complete all required fields. You can save a draft and return later.</p>
+        </div>
+      </header>
+      <section class="card-large" aria-labelledby="form-title">
+        <h1 id="form-title" style="margin:0 0 10px;font-family:'Playfair Display',serif;font-weight:600">Application Form — Stepwise</h1>
+        <p class="muted" style="margin-bottom:12px">A single application form for national and international applicants. Estimated time: 10–20 minutes.</p>
+        <div class="progress-bar" aria-hidden="true"><i id="progress-indicator" style="width:0%"></i></div>
+        <div class="stepper" aria-hidden="false" id="stepper" role="tablist">
+          <div class="step active" data-step="1" role="tab" tabindex="0" aria-selected="true" aria-controls="panel-1">
+            <div class="circle">1</div>
+            <div class="label">Applicant</div>
+          </div>
+          <div class="step" data-step="2" role="tab" tabindex="-1" aria-controls="panel-2">
+            <div class="circle">2</div>
+            <div class="label">Program & Academics</div>
+          </div>
+          <div class="step" data-step="3" role="tab" tabindex="-1" aria-controls="panel-3">
+            <div class="circle">3</div>
+            <div class="label">Documents & Residency</div>
+          </div>
+          <div class="step" data-step="4" role="tab" tabindex="-1" aria-controls="panel-4">
+            <div class="circle">4</div>
+            <div class="label">Review & Submit</div>
+          </div>
+        </div>
+        <form id="app-form" class="application-form" novalidate>
+          <section class="step-panel active" data-step="1" aria-hidden="false" id="panel-1">
+            <div class="grid">
+              <div>
+                <div class="field">
+                  <label for="applicant-type" class="required">Applicant type</label>
+                  <select id="applicant-type" name="applicantType" required>
+                    <option value="national">National</option>
+                    <option value="international">International</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="username" class="required">Username</label>
+                  <input id="username" name="username" type="text" autocomplete="username" required minlength="3" />
+                </div>
+                <div class="field">
+                  <label for="password" class="required">Password</label>
+                  <input id="password" name="password" type="password" autocomplete="new-password" required minlength="6" />
+                  <span class="hint">Choose a strong password (minimum 6 characters).</span>
+                </div>
+                <div class="field">
+                  <label for="first-name" class="required">First name</label>
+                  <input id="first-name" name="firstName" type="text" autocomplete="given-name" required />
+                </div>
+                <div class="field">
+                  <label for="last-name" class="required">Last name</label>
+                  <input id="last-name" name="lastName" type="text" autocomplete="family-name" required />
+                </div>
+                <div class="field">
+                  <label for="dob" class="required">Date of birth</label>
+                  <input id="dob" name="dob" type="date" required />
+                </div>
+              </div>
+              <div>
+                <div class="field">
+                  <label for="email" class="required">Email</label>
+                  <input id="email" name="email" type="email" autocomplete="email" required />
+                </div>
+                <div class="field">
+                  <label for="phone" class="required">Phone</label>
+                  <input id="phone" name="phone" type="tel" autocomplete="tel" required />
+                  <p class="hint">Include country code for international numbers.</p>
+                </div>
+                <div class="field">
+                  <label for="nationality">Nationality</label>
+                  <input id="nationality" name="nationality" type="text" autocomplete="country" />
+                </div>
+                <div class="field">
+                  <label for="address">Current address</label>
+                  <textarea id="address" name="address" placeholder="Street, city, postal code, country"></textarea>
+                </div>
+              </div>
+            </div>
+            <div id="residency-block" style="margin-top:8px">
+              <div id="int-block" style="display:none">
+                <div class="notice">International applicant — please ensure passport and residency documentation are uploaded in the next step.</div>
+              </div>
+              <div id="nat-block" style="display:none">
+                <p class="muted">National applicants: provide national ID in the Documents step.</p>
+              </div>
+            </div>
+            <div class="actions" style="margin-top:18px">
+              <button type="button" class="btn btn-ghost" id="save-draft-1">Save draft</button>
+              <button type="button" class="btn btn-primary" id="next-1">Next →</button>
+            </div>
+          </section>
+          <section class="step-panel" data-step="2" aria-hidden="true" id="panel-2">
+            <div class="grid">
+              <div>
+                <div class="field">
+                  <label for="intake-term" class="required">Intake / Term</label>
+                  <select id="intake-term" name="intakeTerm" required>
+                    <option value="">Select intake</option>
+                    <option>September 2026</option>
+                    <option>January 2027</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="program" class="required">Program applied for</label>
+                  <select id="program" name="program" required>
+                    <option value="">Choose a program</option>
+                    <option>International Baccalaureate (IBDP)</option>
+                    <option>French Baccalaureate</option>
+                    <option>French as a Foreign Language (FLE)</option>
+                    <option>Summer Internship / Camp</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="current-school">Current school / Institution</label>
+                  <input id="current-school" name="currentSchool" type="text" />
+                </div>
+              </div>
+              <div>
+                <div class="field">
+                  <label for="current-grade">Current grade / year</label>
+                  <input id="current-grade" name="currentGrade" type="text" />
+                </div>
+                <div class="field">
+                  <label for="prev-academics">Previous academic record (summary)</label>
+                  <textarea id="prev-academics" name="prevAcademics" placeholder="Brief summary of grades, achievements, or attach transcripts below"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-ghost" id="prev-2">← Back</button>
+              <button type="button" class="btn btn-ghost" id="save-draft-2">Save draft</button>
+              <button type="button" class="btn btn-primary" id="next-2">Next →</button>
+            </div>
+          </section>
+          <!-- STEP 3: Documents & Residency -->
+          <section class="step-panel" data-step="3" aria-hidden="true" id="panel-3">
+            <div class="grid">
+              <div>
+                <div class="field">
+                  <label class="required">Primary identity document</label>
+                  <div class="hint">Passport for international applicants, national ID for national applicants. PDF/JPG/PNG only (max 8 MB).</div>
+                  <input id="id-file" name="idFile" type="file" accept=".pdf,image/*" />
+                  <div class="file-list" id="file-list-id" aria-live="polite"></div>
+                </div>
+
+                <div class="field">
+                  <label>Academic transcripts (optional)</label>
+                  <input id="transcripts" name="transcripts" type="file" accept=".pdf,image/*" multiple />
+                  <div class="file-list" id="file-list-transcripts" aria-live="polite"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="field">
+                  <label>Proof of language (if any)</label>
+                  <select id="language-proof" name="languageProof">
+                    <option value="">None</option>
+                    <option>IELTS</option>
+                    <option>TOEFL</option>
+                    <option>Cambridge</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label>Emergency contact</label>
+                  <input id="emergency-name" name="emergencyName" type="text" placeholder="Full name" />
+                  <input id="emergency-phone" name="emergencyPhone" type="tel" placeholder="Phone" style="margin-top:8px" />
+                </div>
+              </div>
+            </div>
+
+            <div class="notice" role="note">Accepted document formats: PDF, JPG, PNG. Max file size: 8 MB each. For larger files, provide a secure download link in the transcripts/notes field.</div>
+
+            <div class="actions">
+              <button type="button" class="btn btn-ghost" id="prev-3">← Back</button>
+              <button type="button" class="btn btn-ghost" id="save-draft-3">Save draft</button>
+              <button type="button" class="btn btn-primary" id="next-3">Next →</button>
+            </div>
+          </section>
+          <section class="step-panel" data-step="4" aria-hidden="true" id="panel-4">
+            <h3 style="margin-top:0">Review application</h3>
+            <div class="review" id="review-area" aria-live="polite"></div>
+            <div style="margin-top:12px">
+              <label class="field"><input type="checkbox" id="agree" required /> <span style="margin-left:8px">I confirm that the information provided is accurate and I agree to the <a href="#">terms and conditions</a>.</span></label>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn btn-ghost" id="prev-4">← Back</button>
+              <button type="button" class="btn btn-secondary" id="save-draft-final">Save draft</button>
+              <button type="submit" class="btn btn-primary" id="submit-btn">Submit application</button>
+            </div>
+            <div class="form-footer">After submission, you will receive a confirmation email with the next steps. Applications are reviewed within 5 working days.</div>
+          </section>
+        </form>
+      </section>
+    </section>
+  </main>
+  <script>
+    (function(){
+      const form = document.getElementById('app-form');
+      const panels = Array.from(document.querySelectorAll('.step-panel'));
+      const stepEls = Array.from(document.querySelectorAll('.stepper .step'));
+      const progress = document.getElementById('progress-indicator');
+      let current = 1;
+      const updateStepper = () => {
+        stepEls.forEach(s => {
+          const step = Number(s.getAttribute('data-step'));
+          s.classList.toggle('active', step === current);
+          s.classList.toggle('completed', step < current);
+          s.setAttribute('aria-selected', String(step === current));
+          s.tabIndex = step === current ? 0 : -1;
+        });
+        const pct = Math.round(((current - 1) / (panels.length - 1)) * 100);
+        progress.style.width = pct + '%';
+      };
+      const showStep = (n) => {
+        panels.forEach(p => {
+          const step = Number(p.getAttribute('data-step'));
+          p.classList.toggle('active', step === n);
+          p.setAttribute('aria-hidden', step === n ? 'false' : 'true');
+        });
+        current = n;
+        updateStepper();
+        const firstField = panels.find(p => p.classList.contains('active')).querySelector('input,select,textarea,button');
+        if(firstField) setTimeout(()=>firstField.focus(),50);
+        const activeStep = document.querySelector('.stepper .step.active');
+        if(activeStep && activeStep.scrollIntoView){
+          activeStep.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+        }
+      };
+      const validatePanel = (panel) => {
+        const requireds = Array.from(panel.querySelectorAll('[required]'));
+        for(const el of requireds){
+          if(el.type === 'checkbox') {
+            if(!el.checked) { el.focus(); return `${el.name || el.id} required`; }
+          } else if(!el.value) { el.focus(); return `${el.name || el.id} required`; }
+          if(el.name === "username" && el.value.trim().length < 3) {
+            el.focus(); return "Username must be at least 3 characters";
+          }
+          if(el.name === "password" && el.value.length < 6) {
+            el.focus(); return "Password must be at least 6 characters";
+          }
+        }
+        return null;
+      };
+      document.getElementById('next-1').addEventListener('click', ()=>{
+        const panel = panels.find(p => p.getAttribute('data-step') === '1');
+        const err = validatePanel(panel);
+        if(err){ alert('Please complete required fields in this step.\n' + err); return; }
+        showStep(2);
+      });
+      document.getElementById('next-2').addEventListener('click', ()=>{
+        const panel = panels.find(p => p.getAttribute('data-step') === '2');
+        const err = validatePanel(panel);
+        if(err){ alert('Please complete required fields in this step.'); return; }
+        showStep(3);
+      });
+      document.getElementById('next-3').addEventListener('click', ()=>{
+        showStep(4);
+        fillReview();
+      });
+      document.getElementById('prev-2').addEventListener('click', ()=>showStep(1));
+      document.getElementById('prev-3').addEventListener('click', ()=>showStep(2));
+      document.getElementById('prev-4').addEventListener('click', ()=>showStep(3));
+      const DRAFT_KEY = 'edr-application-draft-v1';
+      const saveDraft = (showAlert=true) => {
+        const data = {};
+        const elements = form.querySelectorAll('input,select,textarea');
+        elements.forEach(el=>{
+          if(el.type === 'file') return;
+          if(el.type === 'checkbox') data[el.id || el.name] = el.checked;
+          else data[el.id || el.name] = el.value;
+        });
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+        if(showAlert) alert('Draft saved locally. You can return to this device to finish your application.');
+      };
+      document.getElementById('save-draft-1').addEventListener('click', ()=>saveDraft());
+      document.getElementById('save-draft-2').addEventListener('click', ()=>saveDraft());
+      document.getElementById('save-draft-3').addEventListener('click', ()=>saveDraft());
+      document.getElementById('save-draft-final').addEventListener('click', ()=>saveDraft());
+      const loadDraft = () => {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if(!raw) return;
+        try {
+          const data = JSON.parse(raw);
+          Object.keys(data).forEach(k=>{
+            const el = document.getElementById(k) || document.querySelector(`[name="${k}"]`);
+            if(!el) return;
+            if(el.type === 'checkbox') el.checked = data[k];
+            else el.value = data[k];
+          });
+        } catch(e) {}
+      };
+      loadDraft();
+      const applicantType = document.getElementById('applicant-type');
+      const intBlock = document.getElementById('int-block');
+      const natBlock = document.getElementById('nat-block');
+      const toggleApplicantType = () => {
+        const val = applicantType.value;
+        intBlock.style.display = val === 'international' ? '' : 'none';
+        natBlock.style.display = val === 'national' ? '' : 'none';
+      };
+      applicantType.addEventListener('change', toggleApplicantType);
+      toggleApplicantType();
+      // file preview and validation
+      const fileInputHandler = (inputEl, listElId) => {
+        const list = document.getElementById(listElId);
+        list.innerHTML = '';
+        const files = Array.from(inputEl.files || []);
+        files.forEach(file=>{
+          const item = document.createElement('div');
+          item.className = 'file-item';
+          const left = document.createElement('div');
+          left.innerHTML = `<strong>${file.name}</strong><div style="font-size:12px;color:var(--muted)">${Math.round(file.size/1024)} KB</div>`;
+          const right = document.createElement('div');
+          const remove = document.createElement('button');
+          remove.className = 'btn btn-ghost';
+          remove.type = 'button';
+          remove.style.padding='6px 10px';
+          remove.textContent = 'Remove';
+          remove.addEventListener('click', ()=>{
+            const remaining = inputEl.files ? Array.from(inputEl.files).filter(f=>f !== file) : [];
+            const dt = new DataTransfer();
+            remaining.forEach(f=>dt.items.add(f));
+            inputEl.files = dt.files;
+            fileInputHandler(inputEl, listElId);
+          });
+          right.appendChild(remove);
+          item.appendChild(left);
+          item.appendChild(right);
+          list.appendChild(item);
+        });
+      };
+
+      const idFile = document.getElementById('id-file');
+      const transcripts = document.getElementById('transcripts');
+      idFile.addEventListener('change', ()=>fileInputHandler(idFile, 'file-list-id'));
+      transcripts.addEventListener('change', ()=>fileInputHandler(transcripts, 'file-list-transcripts'));
+
+      const fillReview = () => {
+        const area = document.getElementById('review-area');
+        area.innerHTML = '';
+        const keys = [
+          {k:'Username', v: document.getElementById('username') ? document.getElementById('username').value : ""},
+          {k:'Applicant type', v: document.getElementById('applicant-type').value},
+          {k:'First name', v: document.getElementById('first-name').value},
+          {k:'Last name', v: document.getElementById('last-name').value},
+          {k:'Date of birth', v: document.getElementById('dob').value},
+          {k:'Email', v: document.getElementById('email').value},
+          {k:'Phone', v: document.getElementById('phone').value},
+          {k:'Nationality', v: document.getElementById('nationality').value},
+          {k:'Address', v: document.getElementById('address').value},
+          {k:'Intake', v: document.getElementById('intake-term').value},
+          {k:'Program', v: document.getElementById('program').value},
+          {k:'Current school', v: document.getElementById('current-school').value},
+          {k:'Current grade', v: document.getElementById('current-grade').value},
+          {k:'Transcripts attached', v: transcripts.files.length || '0'},
+          {k:'ID document attached', v: idFile.files.length || '0'},
+        ];
+        keys.forEach(row=>{
+          if(row.k === "Password") return;
+          const r = document.createElement('div');
+          r.className = 'review-row';
+          r.innerHTML = `<div class="k">${row.k}</div><div class="v">${row.v || '<span class="muted">Not provided</span>'}</div>`;
+          area.appendChild(r);
+        });
+      };
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const agree = document.getElementById('agree');
+        if(!agree.checked){ alert('You must agree to the terms before submitting.'); agree.focus(); return; }
+        const fd = new FormData();
+        const elements = form.querySelectorAll('input,select,textarea');
+        elements.forEach(el=>{
+          if(!el.name && !el.id) return;
+          const key = el.name || el.id;
+          if(el.type === 'file'){
+            const files = Array.from(el.files || []);
+            files.forEach(f => fd.append(key, f, f.name));
+          } else if(el.type === 'checkbox'){
+            fd.append(key, el.checked ? '1' : '0');
+          } else {
+            fd.append(key, el.value || '');
+          }
+        });
+        try {
+          const submitBtn = document.getElementById('submit-btn');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Submitting...';
+          const resp = await fetch('https://examguide.onrender.com/api/application', { method: 'POST', body: fd });
+          let text = await resp.text();
+          let data;
+          try { data = JSON.parse(text); } catch { data = {message: text}; }
+          if (resp.status === 201) {
+            localStorage.removeItem(DRAFT_KEY);
+            alert('Application submitted. You will receive a confirmation email shortly.');
+            window.location.href = '/login.html';
+          } else {
+            alert(`Submission failed: ${data.message || 'Unknown error. Please try again.'}`);
+          }
+        } catch (err) {
+          alert('Submission failed. Please try again later or contact admissions.');
+        } finally {
+          const submitBtn = document.getElementById('submit-btn');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit application';
+        }
+      });
+      updateStepper();
+      showStep(1);
+      stepEls.forEach(s=>{
+        s.addEventListener('click', ()=>{
+          const target = Number(s.getAttribute('data-step'));
+          if(target <= current) showStep(target);
+        });
+        s.addEventListener('keydown', (e) => {
+          const cur = Number(s.getAttribute('data-step'));
+          if(e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if(cur <= current) showStep(cur);
+          }
+        });
+      });
+      const MAX_BYTES = 8 * 1024 * 1024;
+      const validateFilesSize = (input) => {
+        for(const f of input.files){
+          if(f.size > MAX_BYTES){
+            alert(`File ${f.name} is larger than 8 MB. Please compress or provide a link.`);
+            input.value = '';
+            fileInputHandler(input, input === idFile ? 'file-list-id' : 'file-list-transcripts');
+            return false;
+          }
+        }
+        return true;
+      };
+      idFile.addEventListener('change', ()=>validateFilesSize(idFile));
+      transcripts.addEventListener('change', ()=>validateFilesSize(transcripts));
+    })();
+  </script>
+</body>
+</html>
