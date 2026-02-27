@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin — Results Management | ExamGuard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=0.901" />
+  <link href="https://fonts.googleapis.com/css?family=Inter:400,600,700&display=swap" rel="stylesheet">
+  <link rel="icon" href="../logo.png">
+  <style>
+    :root{
+      --bg-0:#f6f8ff; --bg-1:#eef2ff;
+      --accent:#3b82f6; --accent-2:#6366f1; --muted:#6b7280;
+      --card-bg:#ffffff; --radius:12px; --max-w:1200px;
+      --danger:#ef4444; --success:#10b981;
+      --sidebar-w:300px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg-0),var(--bg-1));color:#0b2a44;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+
+    /* App layout */
+    .app { display:flex; min-height:100vh; align-items:stretch; }
+    .overlay { position:fixed; inset:0; background:rgba(2,6,23,0.45); z-index:50; display:none; }
+    .overlay.visible { display:block; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w); min-width: var(--sidebar-w);
+      background: linear-gradient(180deg,#0f172a 0%, #1e3a8a 100%);
+      color:#fff; padding:20px 16px; position:fixed; left:0; top:0; bottom:0; z-index:100;
+      box-shadow: 4px 0 28px rgba(15,23,42,0.12);
+      display:flex; flex-direction:column; gap:14px; overflow-y:auto;
+      transform: translateX(0); transition: none;
+    }
+    @media (max-width:720px) {
+      .sidebar { transform: translateX(-110%); transition: transform .28s ease; position:fixed; width:86vw; min-width:86vw; }
+      .sidebar.open { transform: translateX(0); box-shadow: 0 24px 48px rgba(2,6,23,0.5); }
+      .sidebar.hidden { transform: translateX(-110%); }
+    }
+
+    .brand { display:flex; gap:12px; align-items:center; }
+    .brand img { width:44px; height:44px; border-radius:10px; object-fit:cover; border:3px solid rgba(255,224,102,0.12); background:#fff; }
+    .brand .title { font-weight:800; font-size:1.05rem; color:#ffe066; }
+    .brand .sub { color:rgba(255,255,255,0.9); font-size:0.92rem; }
+
+    .nav { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+    .nav a { display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px; font-weight:700; font-size:1rem; color:#e6eefc; background:transparent; }
+    .nav a.active, .nav a:hover { background: rgba(255,255,255,0.04); color:#ffe066; transform: translateX(3px); }
+
+    .spacer { flex:1; }
+    .profile { display:flex; gap:12px; align-items:center; padding-top:10px; border-top:1px solid rgba(255,255,255,0.04); }
+    .profile img { width:48px; height:48px; border-radius:10px; object-fit:cover; border:2px solid #ffe066; }
+
+    /* Topbar */
+    .topbar { position: fixed; left: var(--sidebar-w); top: 0; width: calc(100vw - var(--sidebar-w)); z-index: 90; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; backdrop-filter: blur(6px); background: rgba(255,255,255,0.92); border-bottom:1px solid rgba(11,42,60,0.06); box-shadow:0 6px 18px rgba(11,42,60,0.04); min-height:64px; }
+    @media (max-width:720px) { .topbar { left:0; width:100vw; padding:10px 12px; } }
+
+    .hamburger { display:none; background:var(--accent); color:#fff; border:none; padding:9px 12px; border-radius:10px; cursor:pointer; font-weight:800; }
+    @media (max-width:980px) { .hamburger { display:inline-flex; } }
+
+    .page-title { font-weight:900; color:var(--accent-2); }
+    .muted-small { font-size:0.92rem; color:var(--muted); }
+
+    /* Main content */
+    main { margin-left: var(--sidebar-w); padding:20px; padding-top:96px; flex:1; transition: margin-left .28s; min-height:100vh; max-width:1200px; margin-right:auto; margin-left:calc(var(--sidebar-w) + 20px); }
+    @media (max-width:980px) { main { margin-left:20px; margin-right:20px; } }
+    @media (max-width:720px) { main { margin-left:12px; margin-right:12px; padding-top:80px; } }
+
+    .tabs { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+    .tab { padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; color:var(--accent-2); background:transparent; border:1px solid transparent; }
+    .tab.active { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; border-color:rgba(59,130,246,0.06); }
+
+    .card { background:var(--card-bg); border-radius:12px; padding:14px; border:1px solid rgba(11,42,60,0.04); box-shadow:0 10px 30px rgba(2,6,23,0.04); }
+    .space { height:12px; }
+
+    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+    .btn { padding:9px 12px; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#fff; font-weight:800; }
+    .btn.ghost { background:transparent; color:var(--accent-2); border:1px solid rgba(59,130,246,0.08); }
+    .btn.danger { background:linear-gradient(90deg,#ef4444,#dc2626); }
+
+    .filters { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .filters select, .filters input[type="search"], .filters input[type="date"] { padding:8px; border-radius:8px; border:1px solid #e6e9ef; }
+
+    .table-wrap { overflow:auto; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    thead th { background:#f8fbff; padding:10px; text-align:left; font-weight:800; border-bottom:1px solid #eef3ff; white-space:nowrap; }
+    tbody td { padding:10px; border-bottom:1px solid #f1f5fb; vertical-align:middle; }
+    .right { text-align:right; }
+
+    .status { display:inline-block; padding:6px 8px; border-radius:999px; font-weight:800; font-size:0.85rem; }
+    .status.published { background:rgba(16,185,129,0.12); color:var(--success); border:1px solid rgba(16,185,129,0.08); }
+    .status.draft { background:rgba(99,102,241,0.06); color:var(--accent-2); border:1px solid rgba(99,102,241,0.06); }
+    .status.declined { background:rgba(239,68,68,0.08); color:var(--danger); border:1px solid rgba(239,68,68,0.06); }
+    .status.flagged { background:#fff6f6; color:var(--danger); border:1px solid rgba(239,68,68,0.06); }
+
+    .pager { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:12px; }
+
+    .modal-backdrop { position:fixed; inset:0; background:rgba(2,6,23,0.45); display:none; align-items:center; justify-content:center; z-index:200; padding:12px; }
+    .modal-backdrop.active { display:flex; }
+    .modal-card { background:#fff; border-radius:12px; max-width:900px; width:100%; padding:14px; box-shadow:0 20px 60px rgba(2,6,23,0.2); }
+
+    /* page loader */
+    .page-loader {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 1200;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(3px);
+      flex-direction: column;
+    }
+    .page-loader.active { display:flex; }
+    .page-loader .spinner { width:44px;height:44px;border-radius:50%;border:6px solid rgba(0,0,0,0.06);border-top-color:var(--accent);animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .page-loader .msg { font-weight:800; color:#0b2a44; }
+    .page-loader .sub { color:var(--muted); font-size:0.92rem; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+    <!-- Page loader -->
+    <div id="pageLoader" class="page-loader" role="status" aria-live="polite" aria-hidden="true">
+      <div class="spinner" aria-hidden="true"></div>
+      <div class="msg" id="loaderMsg">Loading results...</div>
+      <div class="sub" id="loaderSub">Fetching submissions and profile</div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Admin navigation" role="navigation">
+      <div class="brand">
+        <img src="../logo.png" alt="logo">
+        <div>
+          <div class="title">ExamGuard Admin</div>
+          <div class="sub">Results Management</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="sideNav" aria-label="Primary">
+        <a href="#" class="side-link active" data-tab="overview">📈 Overview</a>
+        <a href="#" class="side-link" data-tab="results">🧾 Submissions</a>
+        <a href="#" class="side-link" data-tab="reports">📊 Reports</a>
+      </nav>
+
+      <div class="spacer" aria-hidden="true"></div>
+
+      <div class="profile" role="region" aria-label="Admin profile">
+        <img src="../avatar.jpg" alt="Admin avatar" id="adminAvatar">
+        <div>
+          <div style="font-weight:800" id="adminName">Admin User</div>
+          <div class="muted-small" id="adminOrg">Institution: Sunrise High</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- topbar -->
+    <div class="topbar" role="banner">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button class="hamburger" id="hamburger" aria-label="Open menu">☰</button>
+        <div>
+          <div class="page-title">Results Management</div>
+          <div class="muted-small">Review and moderate student submissions</div>
+        </div>
+      </div>
+
+      <div class="muted-small" id="signedIn">Signed in as: <strong id="signedInName">Admin</strong></div>
+    </div>
+
+    <!-- Main content -->
+    <main id="main">
+      <!-- OVERVIEW -->
+      <section id="overview" class="tab-section card" role="region" aria-labelledby="overviewTitle">
+        <h2 id="overviewTitle">Overview</h2>
+        <div class="space"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div class="card">
+            <div class="muted-small">Total submissions</div>
+            <div style="font-weight:900;font-size:1.3rem" id="statTotal">--</div>
+          </div>
+          <div class="card">
+            <div class="muted-small">Pending (unpublished)</div>
+            <div style="font-weight:900;font-size:1.3rem" id="statPending">--</div>
+          </div>
+          <div class="card">
+            <div class="muted-small">Flagged</div>
+            <div style="font-weight:900;font-size:1.3rem" id="statFlagged">--</div>
+          </div>
+          <div class="card">
+            <div class="muted-small">Published</div>
+            <div style="font-weight:900;font-size:1.3rem" id="statPublished">--</div>
+          </div>
+        </div>
+        <div class="space"></div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">Recent submissions</div>
+            <div class="muted-small">Latest activity</div>
+          </div>
+          <div id="recentList" style="margin-top:10px" class="muted-small">No recent activity</div>
+        </div>
+      </section>
+
+      <div class="space"></div>
+
+      <!-- RESULTS -->
+      <section id="results" class="tab-section" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:800">Submissions</div>
+            <div class="muted-small">Filter, search and act on results</div>
+          </div>
+
+          <div class="space"></div>
+
+          <div class="controls">
+            <div class="filters" role="search" aria-label="search filters">
+              <select id="filterClass"><option value="">All classes</option></select>
+              <select id="filterExam"><option value="">All exams</option></select>
+              <select id="filterType"><option value="">All types</option><option value="CA">CA</option><option value="General">General</option></select>
+              <select id="filterStatus"><option value="">All status</option><option value="draft">Draft</option><option value="published">Published</option><option value="declined">Declined</option><option value="flagged">Flagged</option></select>
+              <input type="date" id="filterFrom" title="From date">
+              <input type="date" id="filterTo" title="To date">
+              <input type="search" id="searchBox" placeholder="Search student, admission, id">
+              <button class="btn" id="applyFilters">Apply</button>
+              <button class="btn ghost" id="clearFilters">Clear</button>
+            </div>
+
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn ghost" id="exportCsv">Export CSV</button>
+              <button class="btn" id="refreshBtn">Refresh</button>
+            </div>
+          </div>
+
+          <div class="space"></div>
+
+          <div id="bulkToolbar" class="bulk-bar" style="display:none">
+            <div id="bulkInfo">0 selected</div>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn small" id="bulkPublish">Publish</button>
+              <button class="btn ghost small" id="bulkDecline">Decline</button>
+              <button class="btn ghost small" id="bulkFlag">Flag</button>
+              <button class="btn danger small" id="bulkDelete">Delete</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table role="table" aria-label="Results table">
+              <thead>
+                <tr>
+                  <th style="width:44px"><input type="checkbox" id="masterSelect" title="Select all visible"></th>
+                  <th>Student</th>
+                  <th>Admission</th>
+                  <th>Class</th>
+                  <th>Exam</th>
+                  <th>Type</th>
+                  <th class="right">Score</th>
+                  <th class="right">Percent</th>
+                  <th>Submitted</th>
+                  <th>Status</th>
+                  <th class="right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="resultsTbody" role="rowgroup"></tbody>
+            </table>
+          </div>
+
+          <div class="pager">
+            <div class="muted-small" id="pagerInfo">0 results</div>
+            <div class="page-controls">
+              <button class="btn ghost small" id="prevPage">Prev</button>
+              <button class="btn ghost small" id="nextPage">Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="space"></div>
+
+      <!-- REPORTS -->
+      <section id="reports" class="tab-section card" style="display:none">
+        <h2>Reports</h2>
+        <div class="space"></div>
+        <div class="muted-small">Quick exports and summary reports per class/exam.</div>
+        <div class="space"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="reportClass"><option value="">Class (all)</option></select>
+          <select id="reportExam"><option value="">Exam (all)</option></select>
+          <button class="btn" id="downloadSummary">Download summary CSV</button>
+          <button class="btn ghost" id="generatePdf">Generate PDF</button>
+        </div>
+        <div class="space"></div>
+        <div id="reportOutput" class="card muted-small">No report generated yet.</div>
+      </section>
+    </main>
+
+    <!-- Modals: view / edit / confirm -->
+    <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-card" id="modalCard" role="document"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = 'https://examguide.onrender.com/api';
+      const TOKEN = localStorage.getItem('eg_token') || null;
+      const PAGE_SIZE = 12;
+
+      // DOM refs
+      const sideLinks = Array.from(document.querySelectorAll('.side-link'));
+      const sections = document.querySelectorAll('.tab-section');
+      const pageLoader = document.getElementById('pageLoader');
+      const loaderMsg = document.getElementById('loaderMsg');
+      const loaderSub = document.getElementById('loaderSub');
+
+      const adminNameEl = document.getElementById('adminName');
+      const adminOrgEl = document.getElementById('adminOrg');
+      const adminAvatar = document.getElementById('adminAvatar');
+      const signedInName = document.getElementById('signedInName');
+
+      // filter & table elements
+      const filterClass = document.getElementById('filterClass');
+      const filterExam = document.getElementById('filterExam');
+      const filterType = document.getElementById('filterType');
+      const filterStatus = document.getElementById('filterStatus');
+      const filterFrom = document.getElementById('filterFrom');
+      const filterTo = document.getElementById('filterTo');
+      const searchBox = document.getElementById('searchBox');
+      const applyFilters = document.getElementById('applyFilters');
+      const clearFilters = document.getElementById('clearFilters');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const exportCsv = document.getElementById('exportCsv');
+
+      const resultsTbody = document.getElementById('resultsTbody');
+      const masterSelect = document.getElementById('masterSelect');
+      const bulkToolbar = document.getElementById('bulkToolbar');
+      const bulkInfo = document.getElementById('bulkInfo');
+      const bulkPublish = document.getElementById('bulkPublish');
+      const bulkDecline = document.getElementById('bulkDecline');
+      const bulkFlag = document.getElementById('bulkFlag');
+      const bulkDelete = document.getElementById('bulkDelete');
+
+      const prevPage = document.getElementById('prevPage');
+      const nextPage = document.getElementById('nextPage');
+      const pagerInfo = document.getElementById('pagerInfo');
+
+      const modalBackdrop = document.getElementById('modalBackdrop');
+      const modalCard = document.getElementById('modalCard');
+
+      const reportClass = document.getElementById('reportClass');
+      const reportExam = document.getElementById('reportExam');
+      const downloadSummary = document.getElementById('downloadSummary');
+      const generatePdf = document.getElementById('generatePdf');
+      const reportOutput = document.getElementById('reportOutput');
+
+      // state
+      let page = 1;
+      let results = []; // array of submission objects from backend
+      let selected = new Set();
+      let classes = []; // class list
+      let exams = []; // exam list
+
+      // utilities
+      function showLoader(msg, sub) {
+        if (msg) loaderMsg.textContent = msg;
+        if (sub) loaderSub.textContent = sub;
+        pageLoader.classList.add('active');
+        pageLoader.setAttribute('aria-hidden', 'false');
+      }
+      function hideLoader() {
+        pageLoader.classList.remove('active');
+        pageLoader.setAttribute('aria-hidden', 'true');
+      }
+      function headers(contentType='application/json') {
+        const h = {};
+        if (contentType) h['Content-Type'] = contentType;
+        if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+        return h;
+      }
+      function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]); }
+
+      // try multiple endpoint shapes
+      async function tryFetchCandidates(candidates, opts = {}) {
+        for (const url of candidates) {
+          if (!url) continue;
+          try {
+            const res = await fetch(url, opts);
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (!data) continue;
+            // common shapes
+            if (Array.isArray(data)) return data;
+            if (Array.isArray(data.items)) return data.items;
+            if (Array.isArray(data.data)) return data.data;
+            if (Array.isArray(data.results)) return data.results;
+            if (Array.isArray(data.submissions)) return data.submissions;
+            if (Array.isArray(data.exams)) return data.exams;
+            if (Array.isArray(data.classes)) return data.classes;
+            // single wrapped object -> return array
+            if (Array.isArray(data.rows)) return data.rows;
+            if (data && (data.id || data._id)) return [data];
+          } catch (err) {
+            console.warn('candidate fetch failed', url, err);
+          }
+        }
+        return null;
+      }
+
+      // Load admin profile (local fallback if no token)
+      async function loadProfile() {
+        const local = (function(){ try { return JSON.parse(localStorage.getItem('eg_application')||'null') || null; } catch { return null; } })();
+        if (!TOKEN) return local || {};
+        const candidates = [
+          `${API_BASE}/me`,
+          `${API_BASE}/profile`,
+          `${API_BASE}/users/me`
+        ];
+        for (const url of candidates) {
+          try {
+            const res = await fetch(url, { headers: headers() });
+            if (!res.ok) continue;
+            const data = await res.json();
+            return data.user || data || local || {};
+          } catch (err) { /* try next */ }
+        }
+        return local || {};
+      }
+
+      // Fetch submissions from backend with simple server-side filtering support
+      async function fetchSubmissions(params = {}) {
+        // build a candidate set of endpoints
+        const qs = new URLSearchParams();
+        if (params.class) qs.set('class', params.class);
+        if (params.examId) qs.set('examId', params.examId);
+        if (params.type) qs.set('type', params.type);
+        if (params.status) qs.set('status', params.status);
+        if (params.from) qs.set('from', params.from);
+        if (params.to) qs.set('to', params.to);
+        if (params.q) qs.set('q', params.q);
+        qs.set('page', params.page || 1);
+        qs.set('pageSize', params.pageSize || PAGE_SIZE);
+
+        const candidates = [
+          `${API_BASE}/submissions?${qs.toString()}`,
+          `${API_BASE}/results?${qs.toString()}`,
+          `${API_BASE}/submissions/list?${qs.toString()}`
+        ];
+        return await tryFetchCandidates(candidates, { headers: headers() });
+      }
+
+      async function fetchLookups() {
+        // classes & exams lookups
+        const classCandidates = [
+          `${API_BASE}/classes`,
+          `${API_BASE}/lookups/classes`,
+          `${API_BASE}/meta/classes`
+        ];
+        const examCandidates = [
+          `${API_BASE}/exams`,
+          `${API_BASE}/lookups/exams`,
+          `${API_BASE}/meta/exams`
+        ];
+        const [cls, ex] = await Promise.all([
+          tryFetchCandidates(classCandidates, { headers: headers() }).catch(()=>null),
+          tryFetchCandidates(examCandidates, { headers: headers() }).catch(()=>null)
+        ]);
+        return { classes: Array.isArray(cls) ? cls : [], exams: Array.isArray(ex) ? ex : [] };
+      }
+
+      // render helpers
+      function populateFilterLists() {
+        filterClass.innerHTML = '<option value="">All classes</option>';
+        reportClass.innerHTML = '<option value="">All classes</option>';
+        (classes || []).forEach(c => {
+          const id = c.id || c._id || c.classId || c.name;
+          const name = c.name || c.title || id;
+          const o = document.createElement('option'); o.value = id; o.textContent = name; filterClass.appendChild(o);
+          const o2 = o.cloneNode(true); reportClass.appendChild(o2);
+        });
+
+        filterExam.innerHTML = '<option value="">All exams</option>';
+        reportExam.innerHTML = '<option value="">All exams</option>';
+        (exams || []).forEach(e => {
+          const id = e.id || e._id || e.examId || e.code;
+          const title = e.title || e.name || id;
+          const o = document.createElement('option'); o.value = id; o.textContent = `${title} • ${id}`; filterExam.appendChild(o);
+          const o2 = o.cloneNode(true); reportExam.appendChild(o2);
+        });
+      }
+
+      function statusLabel(st) {
+        const s = document.createElement('span');
+        s.className = 'status ' + (st === 'published' ? 'published' : (st === 'draft' ? 'draft' : (st === 'declined' ? 'declined' : 'flagged')));
+        s.textContent = (st || '').toUpperCase();
+        return s.outerHTML;
+      }
+
+      function renderTable(rows, total) {
+        resultsTbody.innerHTML = '';
+        if (!Array.isArray(rows) || !rows.length) {
+          resultsTbody.innerHTML = '<tr><td colspan="11"><div class="muted-small">No submissions found.</div></td></tr>';
+          pagerInfo.textContent = `0 results`;
+          return;
+        }
+
+        rows.forEach(r => {
+          const pct = r.max ? Math.round((r.score / r.max) * 100) : 0;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><input type="checkbox" class="row-select" data-id="${escapeHtml(r.id)}" ${selected.has(r.id)?'checked':''}></td>
+            <td><strong>${escapeHtml(r.student)}</strong><div class="muted-small">${escapeHtml(r.id || r.submissionId || '')}</div></td>
+            <td>${escapeHtml(r.admission || r.reg || '')}</td>
+            <td>${escapeHtml(r.class || r.className || '')}</td>
+            <td>${escapeHtml(r.examTitle || r.exam || r.examId || '')}<div class="muted-small">${escapeHtml(r.examId || '')}</div></td>
+            <td>${escapeHtml(r.type || '')}</td>
+            <td class="right">${escapeHtml(String(r.score || 0))} / ${escapeHtml(String(r.max || 0))}</td>
+            <td class="right">${pct}%</td>
+            <td>${new Date(r.submittedAt || r.createdAt || r.time || Date.now()).toLocaleString()}</td>
+            <td>${statusLabel(r.status)}</td>
+            <td class="right">
+              <button class="btn small viewBtn" data-id="${escapeHtml(r.id)}">View</button>
+              <button class="btn ghost small editBtn" data-id="${escapeHtml(r.id)}">Edit</button>
+              <button class="btn ghost small moreBtn" data-id="${escapeHtml(r.id)}">More</button>
+            </td>
+          `;
+          resultsTbody.appendChild(tr);
+        });
+
+        pagerInfo.textContent = `Showing ${rows.length} of ${total} results`;
+      }
+
+      // selection & bulk
+      function refreshBulk() {
+        const c = selected.size;
+        bulkInfo.textContent = `${c} selected`;
+        bulkToolbar.style.display = c ? '' : 'none';
+      }
+
+      async function bulkAction(action) {
+        if (!selected.size) return alert('No submissions selected');
+        if (action === 'delete' && !confirm('Delete selected submissions? This cannot be undone.')) return;
+        showLoader('Processing bulk action...', `Action: ${action}`);
+        const ids = Array.from(selected);
+        // try server bulk endpoint first
+        const candidates = [
+          `${API_BASE}/submissions/bulk`,
+          `${API_BASE}/results/bulk`,
+          `${API_BASE}/submissions/actions`
+        ];
+        let done = false;
+        for (const url of candidates) {
+          try {
+            const res = await fetch(url, { method:'POST', headers: headers(), body: JSON.stringify({ action, ids }) });
+            if (!res.ok) continue;
+            const data = await res.json();
+            // success -> re-fetch list
+            done = true;
+            break;
+          } catch (err) { console.warn('bulk candidate failed', url, err); }
+        }
+        // optimistic local update if server not available
+        if (!done) {
+          ids.forEach(id => {
+            const idx = results.findIndex(r => r.id === id);
+            if (idx === -1) return;
+            if (action === 'publish') results[idx].status = 'published';
+            if (action === 'decline') results[idx].status = 'declined';
+            if (action === 'flag') results[idx].status = 'flagged';
+            if (action === 'delete') results.splice(idx,1);
+          });
+        }
+        selected.clear();
+        await refreshData(); // re-render from server when possible
+        hideLoader();
+        alert('Bulk action completed');
+      }
+
+      // single record actions & modals
+      function openViewModal(id) {
+        const r = results.find(x => x.id === id);
+        if (!r) return alert('Not found');
+        modalCard.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>${escapeHtml(r.student)}</strong><div class="muted-small">${escapeHtml(r.admission || '')} • ${escapeHtml(r.class || '')}</div></div>
+            <div class="muted-small">${new Date(r.submittedAt || r.createdAt || Date.now()).toLocaleString()}</div>
+          </div>
+          <hr style="margin:12px 0">
+          <div><strong>Exam:</strong> ${escapeHtml(r.examTitle || r.examId || '')}</div>
+          <div style="margin-top:8px"><strong>Type:</strong> ${escapeHtml(r.type || '')}</div>
+          <div style="margin-top:8px"><strong>Score:</strong> ${escapeHtml(String(r.score||0))} / ${escapeHtml(String(r.max||0))} (${Math.round(((r.score||0)/(r.max||1))*100)}%)</div>
+          <div style="margin-top:12px"><strong>Status:</strong> ${escapeHtml(r.status)}</div>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn small" id="pubBtn">${r.status==='published'?'Unpublish':'Publish'}</button>
+            <button class="btn ghost small" id="declineBtn">${r.status==='declined'?'Restore':'Decline'}</button>
+            <button class="btn ghost small" id="flagBtnModal">${r.status==='flagged'?'Unflag':'Flag'}</button>
+            <button class="btn danger small" id="delBtn">Delete</button>
+            <button class="btn ghost small" id="closeModal">Close</button>
+          </div>
+        `;
+        modalBackdrop.classList.add('active'); modalBackdrop.setAttribute('aria-hidden','false');
+
+        document.getElementById('closeModal').addEventListener('click', closeModal, { once:true });
+        document.getElementById('pubBtn').addEventListener('click', async ()=>{
+          await singleAction(id, results.find(x=>x.id===id).status==='published' ? 'unpublish' : 'publish');
+          closeModal();
+        }, { once:true });
+        document.getElementById('declineBtn').addEventListener('click', async ()=> { await singleAction(id, 'decline'); closeModal(); }, { once:true });
+        document.getElementById('flagBtnModal').addEventListener('click', async ()=> { await singleAction(id, 'flag'); closeModal(); }, { once:true });
+        document.getElementById('delBtn').addEventListener('click', async ()=> {
+          if (!confirm('Delete this submission?')) return;
+          await singleAction(id, 'delete');
+          closeModal();
+        }, { once:true });
+      }
+
+      function closeModal() { modalBackdrop.classList.remove('active'); modalBackdrop.setAttribute('aria-hidden','true'); modalCard.innerHTML=''; }
+
+      async function singleAction(id, action) {
+        showLoader('Performing action...', action);
+        const candidates = [
+          `${API_BASE}/submissions/${encodeURIComponent(id)}/${action}`,
+          `${API_BASE}/results/${encodeURIComponent(id)}/${action}`,
+          `${API_BASE}/submissions/action`
+        ];
+        let done = false;
+        for (const url of candidates) {
+          try {
+            const body = url.endsWith('/action') ? JSON.stringify({ id, action }) : undefined;
+            const method = body ? 'POST' : 'PUT';
+            const res = await fetch(url, { method, headers: headers(), body });
+            if (!res.ok) continue;
+            done = true;
+            break;
+          } catch (err) { console.warn('singleAction candidate failed', url, err); }
+        }
+        if (!done) {
+          // optimistic local update
+          const idx = results.findIndex(r=>r.id===id);
+          if (idx !== -1) {
+            if (action === 'publish' || action === 'unpublish') results[idx].status = action === 'publish' ? 'published' : 'draft';
+            if (action === 'decline') results[idx].status = 'declined';
+            if (action === 'flag') results[idx].status = 'flagged';
+            if (action === 'delete') results.splice(idx,1);
+          }
+        }
+        await refreshData();
+        hideLoader();
+      }
+
+      // Fetch data from server (with filter support). If server not reachable, keep local results array (initially empty)
+      async function refreshData() {
+        showLoader('Refreshing data...', 'Contacting server');
+        try {
+          // fetch lookups first
+          const lookups = await fetchLookups();
+          classes = Array.isArray(lookups.classes) ? lookups.classes : [];
+          exams = Array.isArray(lookups.exams) ? lookups.exams : [];
+          populateFilterLists();
+
+          // request submissions using filter values (server-side filtering if available)
+          const params = {
+            class: filterClass.value || undefined,
+            examId: filterExam.value || undefined,
+            type: filterType.value || undefined,
+            status: filterStatus.value || undefined,
+            from: filterFrom.value || undefined,
+            to: filterTo.value || undefined,
+            q: (searchBox.value || '').trim() || undefined,
+            page,
+            pageSize: PAGE_SIZE
+          };
+          const data = await fetchSubmissions(params);
+          if (Array.isArray(data)) {
+            // server returned paginated or flat list. If server provides total, try to infer
+            results = data;
+            renderTable(results, results.length);
+          } else {
+            // no server data -> clear table
+            results = [];
+            renderTable([],0);
+          }
+        } catch (err) {
+          console.warn('refresh failed', err);
+          // offline or server error: show previously loaded results (if any)
+          renderTable(results, results.length);
+        } finally {
+          hideLoader();
+        }
+      }
+
+      async function fetchLookups() {
+        const classCandidates = [
+          `${API_BASE}/classes`,
+          `${API_BASE}/lookups/classes`
+        ];
+        const examCandidates = [
+          `${API_BASE}/exams`,
+          `${API_BASE}/lookups/exams`
+        ];
+        const [cls, ex] = await Promise.all([
+          tryFetchCandidates(classCandidates, { headers: headers() }).catch(()=>null),
+          tryFetchCandidates(examCandidates, { headers: headers() }).catch(()=>null)
+        ]);
+        return { classes: Array.isArray(cls) ? cls : [], exams: Array.isArray(ex) ? ex : [] };
+      }
+
+      // wrapper to call fetchSubmissions (keeps UI paging)
+      async function loadAndRender(p = 1) {
+        page = p;
+        await refreshData();
+      }
+
+      // events & delegation
+      document.body.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t.matches('.viewBtn')) openViewModal(t.dataset.id);
+        if (t.matches('.editBtn')) openEditModal(t.dataset.id);
+        if (t.matches('.moreBtn')) openMoreMenu(t.dataset.id, t);
+        if (t.matches('.row-select')) {
+          const id = t.dataset.id;
+          if (t.checked) selected.add(id); else selected.delete(id);
+          refreshBulk();
+        }
+      });
+
+      masterSelect.addEventListener('change', () => {
+        const check = masterSelect.checked;
+        document.querySelectorAll('.row-select').forEach(r => {
+          r.checked = check;
+          const id = r.dataset.id;
+          if (check) selected.add(id); else selected.delete(id);
+        });
+        refreshBulk();
+      });
+
+      bulkPublish.addEventListener('click', ()=> bulkAction('publish'));
+      bulkDecline.addEventListener('click', ()=> bulkAction('decline'));
+      bulkFlag.addEventListener('click', ()=> bulkAction('flag'));
+      bulkDelete.addEventListener('click', ()=> bulkAction('delete'));
+
+      applyFilters.addEventListener('click', ()=> loadAndRender(1));
+      clearFilters.addEventListener('click', ()=> {
+        filterClass.value=''; filterExam.value=''; filterType.value=''; filterStatus.value=''; filterFrom.value=''; filterTo.value=''; searchBox.value='';
+        loadAndRender(1);
+      });
+      refreshBtn.addEventListener('click', ()=> loadAndRender(page));
+      exportCsv.addEventListener('click', async ()=> {
+        showLoader('Preparing export...', 'This may take a moment');
+        try {
+          // if server supports export endpoint, call that with current filters
+          const candidates = [
+            `${API_BASE}/submissions/export`,
+            `${API_BASE}/results/export`
+          ];
+          let done = false;
+          for (const url of candidates) {
+            try {
+              const res = await fetch(url, { method:'POST', headers: headers(), body: JSON.stringify({
+                class: filterClass.value || undefined,
+                examId: filterExam.value || undefined,
+                type: filterType.value || undefined,
+                status: filterStatus.value || undefined,
+                from: filterFrom.value || undefined,
+                to: filterTo.value || undefined,
+                q: (searchBox.value || '').trim() || undefined
+              })});
+              if (!res.ok) continue;
+              const blob = await res.blob();
+              const fname = res.headers.get('x-filename') || 'results_export.csv';
+              const urlObj = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = urlObj; a.download = fname; a.click(); URL.revokeObjectURL(urlObj);
+              done = true;
+              break;
+            } catch (err) { console.warn('export candidate failed', url, err); }
+          }
+          if (!done) {
+            // fallback: client-side export of currently loaded results
+            const rows = [['id','student','admission','class','examId','examTitle','type','score','max','percent','submittedAt','status']];
+            results.forEach(r => rows.push([r.id,r.student,r.admission,r.class,r.examId,r.examTitle,r.type,r.score,r.max, Math.round((r.score/(r.max||1))*100), r.submittedAt, r.status]));
+            const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const urlObj = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = urlObj; a.download = 'results_export.csv'; a.click(); URL.revokeObjectURL(urlObj);
+          }
+        } finally { hideLoader(); }
+      });
+
+      prevPage.addEventListener('click', ()=> { if (page>1) { page--; loadAndRender(page); }});
+      nextPage.addEventListener('click', ()=> { page++; loadAndRender(page); });
+
+      // edit modal presents fields and saves via server if available
+      function openEditModal(id) {
+        const r = results.find(x=>x.id===id);
+        if (!r) return alert('Not found');
+        modalCard.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>Edit submission: ${escapeHtml(r.student)}</strong></div>
+            <div><button class="btn ghost small" id="closeEdit">Close</button></div>
+          </div>
+          <hr style="margin:12px 0">
+          <div style="display:grid;grid-template-columns:1fr 260px;gap:12px">
+            <div>
+              <div class="field"><label>Score<input type="number" id="editScore" min="0" max="${r.max||100}" value="${r.score||0}"></label></div>
+              <div class="field"><label>Max marks<input type="number" id="editMax" min="1" value="${r.max||100}"></label></div>
+              <div class="field"><label>Type<select id="editType"><option value="CA"${r.type==='CA'?' selected':''}>CA</option><option value="General"${r.type==='General'?' selected':''}>General</option></select></label></div>
+            </div>
+            <div>
+              <div class="field"><label>Status<select id="editStatus"><option value="draft"${r.status==='draft'?' selected':''}>Draft</option><option value="published"${r.status==='published'?' selected':''}>Published</option><option value="declined"${r.status==='declined'?' selected':''}>Declined</option><option value="flagged"${r.status==='flagged'?' selected':''}>Flagged</option></select></label></div>
+              <div class="field"><label>Submitted at<input type="datetime-local" id="editSubmitted" value="${new Date(r.submittedAt||Date.now()).toISOString().slice(0,16)}"></label></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+            <button class="btn ghost small" id="cancelEdit">Cancel</button>
+            <button class="btn small" id="saveEdit">Save</button>
+          </div>
+        `;
+        modalBackdrop.classList.add('active'); modalBackdrop.setAttribute('aria-hidden','false');
+
+        document.getElementById('closeEdit').addEventListener('click', closeModal, { once:true });
+        document.getElementById('cancelEdit').addEventListener('click', closeModal, { once:true });
+        document.getElementById('saveEdit').addEventListener('click', async () => {
+          const updated = {
+            score: parseFloat(document.getElementById('editScore').value) || 0,
+            max: parseFloat(document.getElementById('editMax').value) || 0,
+            type: document.getElementById('editType').value,
+            status: document.getElementById('editStatus').value,
+            submittedAt: new Date(document.getElementById('editSubmitted').value).toISOString()
+          };
+          showLoader('Saving...', '');
+          try {
+            const candidates = [
+              `${API_BASE}/submissions/${encodeURIComponent(id)}`,
+              `${API_BASE}/results/${encodeURIComponent(id)}`
+            ];
+            let saved = false;
+            for (const url of candidates) {
+              try {
+                const res = await fetch(url, { method:'PUT', headers: headers(), body: JSON.stringify(updated) });
+                if (!res.ok) continue;
+                saved = true;
+                break;
+              } catch (err) { console.warn('save candidate failed', url, err); }
+            }
+            if (!saved) {
+              // optimistic local update
+              const idx = results.findIndex(x=>x.id===id);
+              if (idx > -1) Object.assign(results[idx], updated);
+            } else {
+              // refresh
+              await loadAndRender(page);
+            }
+          } finally {
+            hideLoader();
+            closeModal();
+          }
+        }, { once:true });
+      }
+
+      function openMoreMenu(id, anchor) {
+        const action = prompt('Action (publish / decline / flag / delete / copy):');
+        if (!action) return;
+        const a = action.trim().toLowerCase();
+        if (a === 'publish') singleAction(id, 'publish');
+        else if (a === 'decline') singleAction(id, 'decline');
+        else if (a === 'flag') singleAction(id, 'flag');
+        else if (a === 'delete') { if (confirm('Delete?')) singleAction(id, 'delete'); }
+        else if (a === 'copy') {
+          const r = results.find(x=>x.id===id);
+          if (!r) return;
+          const copy = JSON.parse(JSON.stringify(r)); copy.id = 'copy-' + Date.now(); copy.submittedAt = new Date().toISOString();
+          results.unshift(copy);
+          renderTable(results, results.length);
+        } else alert('Unknown action');
+      }
+
+      async function singleAction(id, action) {
+        showLoader('Performing action...', action);
+        try {
+          const candidates = [
+            `${API_BASE}/submissions/${encodeURIComponent(id)}/${action}`,
+            `${API_BASE}/results/${encodeURIComponent(id)}/${action}`,
+            `${API_BASE}/submissions/action`
+          ];
+          let done = false;
+          for (const url of candidates) {
+            try {
+              const body = url.endsWith('/action') ? JSON.stringify({ id, action }) : undefined;
+              const method = body ? 'POST' : 'PUT';
+              const res = await fetch(url, { method, headers: headers(), body });
+              if (!res.ok) continue;
+              done = true;
+              break;
+            } catch (err) { console.warn('singleAction candidate failed', url, err); }
+          }
+          if (!done) {
+            // optimistic local update
+            const idx = results.findIndex(r=>r.id===id);
+            if (idx > -1) {
+              if (action === 'publish') results[idx].status = 'published';
+              if (action === 'decline') results[idx].status = 'declined';
+              if (action === 'flag') results[idx].status = 'flagged';
+              if (action === 'delete') results.splice(idx,1);
+            }
+          } else {
+            // if server succeeded, refresh
+            await loadAndRender(page);
+          }
+        } finally {
+          hideLoader();
+        }
+      }
+
+      // lookup and initial load
+      async function init() {
+        showLoader('Loading dashboard...', 'Fetching profile & submissions');
+        try {
+          const profile = await loadProfile();
+          adminNameEl.textContent = (profile.firstName || profile.name || profile.username || 'Admin');
+          adminOrgEl.textContent = profile.institution || profile.school || adminOrgEl.textContent;
+          signedInName.textContent = adminNameEl.textContent;
+          if (profile.profilePic) adminAvatar.src = profile.profilePic;
+
+          // fetch lookups & submissions (server-supported filtering & paging)
+          const lookups = await fetchLookups();
+          classes = Array.isArray(lookups.classes) ? lookups.classes : [];
+          exams = Array.isArray(lookups.exams) ? lookups.exams : [];
+          populateFilterLists();
+
+          // initial submissions fetch
+          const subs = await fetchSubmissions({ page, pageSize: PAGE_SIZE });
+          results = Array.isArray(subs) ? subs : [];
+          renderTable(results, results.length);
+          updateStats();
+        } catch (err) {
+          console.error('init failed', err);
+          // show empty state
+          results = [];
+          renderTable(results, 0);
+        } finally {
+          hideLoader();
+        }
+      }
+
+      async function fetchLookups() {
+        const classCandidates = [
+          `${API_BASE}/classes`,
+          `${API_BASE}/lookups/classes`
+        ];
+        const examCandidates = [
+          `${API_BASE}/exams`,
+          `${API_BASE}/lookups/exams`
+        ];
+        const [cls, ex] = await Promise.all([
+          tryFetchCandidates(classCandidates, { headers: headers() }).catch(()=>null),
+          tryFetchCandidates(examCandidates, { headers: headers() }).catch(()=>null)
+        ]);
+        return { classes: Array.isArray(cls) ? cls : [], exams: Array.isArray(ex) ? ex : [] };
+      }
+
+      function populateFilterLists() {
+        filterClass.innerHTML = '<option value="">All classes</option>';
+        reportClass.innerHTML = '<option value="">All classes</option>';
+        (classes || []).forEach(c => {
+          const id = c.id || c._id || c.classId || c.name;
+          const name = c.name || c.title || id;
+          const o = document.createElement('option'); o.value = id; o.textContent = name; filterClass.appendChild(o);
+          const o2 = o.cloneNode(true); reportClass.appendChild(o2);
+        });
+
+        filterExam.innerHTML = '<option value="">All exams</option>';
+        reportExam.innerHTML = '<option value="">All exams</option>';
+        (exams || []).forEach(e => {
+          const id = e.id || e._id || e.examId || e.code;
+          const title = e.title || e.name || id;
+          const o = document.createElement('option'); o.value = id; o.textContent = `${title} • ${id}`; filterExam.appendChild(o);
+          const o2 = o.cloneNode(true); reportExam.appendChild(o2);
+        });
+      }
+
+      // event wiring for side links
+      sideLinks.forEach(l => {
+        l.addEventListener('click', (e) => {
+          e.preventDefault();
+          sideLinks.forEach(x=>x.classList.remove('active'));
+          l.classList.add('active');
+          const target = l.dataset.tab;
+          sections.forEach(s => s.style.display = s.id === target ? '' : 'none');
+          if (target === 'results') loadAndRender(1);
+        });
+      });
+
+      // helper to load current filters and render (server side paging attempted)
+      async function loadAndRender(p = 1) {
+        page = p;
+        showLoader('Loading submissions...', 'Applying filters');
+        try {
+          const params = {
+            class: filterClass.value || undefined,
+            examId: filterExam.value || undefined,
+            type: filterType.value || undefined,
+            status: filterStatus.value || undefined,
+            from: filterFrom.value || undefined,
+            to: filterTo.value || undefined,
+            q: (searchBox.value || '').trim() || undefined,
+            page,
+            pageSize: PAGE_SIZE
+          };
+          const subs = await fetchSubmissions(params);
+          results = Array.isArray(subs) ? subs : [];
+          renderTable(results, results.length);
+          updateStats();
+        } catch (err) {
+          console.warn('loadAndRender failed', err);
+        } finally {
+          hideLoader();
+        }
+      }
+
+      // initial call
+      init();
+
+      // keyboard/escape to close modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+    })();
+  </script>
+</body>
+</html>
