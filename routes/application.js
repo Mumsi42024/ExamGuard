@@ -120,6 +120,65 @@ router.post('/', cpUpload, async (req, res) => {
   }
 });
 
+router.post('/login', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const usernameOrEmail = (body.username || body.email || '').trim();
+    const password = body.password || '';
+
+    if (!usernameOrEmail || !password) {
+      return res.status(400).json({ ok: false, message: 'username/email and password required' });
+    }
+
+    // Find application by username or email
+    const app = await Application.findOne({
+      $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }]
+    });
+
+    if (!app) {
+      // Do not reveal whether username or password was incorrect
+      return res.status(401).json({ ok: false, message: 'Invalid credentials' });
+    }
+
+    const match = await bcrypt.compare(password, app.passwordHash);
+    if (!match) {
+      return res.status(401).json({ ok: false, message: 'Invalid credentials' });
+    }
+
+    // Build a safe application object to return (do not include passwordHash or server file paths)
+    const safeApp = {
+      id: app._id.toString(),
+      username: app.username,
+      firstName: app.firstName,
+      lastName: app.lastName,
+      dob: app.dob,
+      email: app.email,
+      phone: app.phone,
+      nationality: app.nationality,
+      address: app.address,
+      intakeTerm: app.intakeTerm,
+      program: app.program,
+      currentSchool: app.currentSchool,
+      currentGrade: app.currentGrade,
+      prevAcademics: app.prevAcademics,
+      idFiles: (app.idFiles || []).map(f => ({ filename: f.filename, originalName: f.originalName, mimeType: f.mimeType, size: f.size })),
+      transcripts: (app.transcripts || []).map(f => ({ filename: f.filename, originalName: f.originalName, mimeType: f.mimeType, size: f.size })),
+      languageProof: app.languageProof,
+      emergencyName: app.emergencyName,
+      emergencyPhone: app.emergencyPhone,
+      agree: app.agree,
+      status: app.status,
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt
+    };
+
+    return res.json({ ok: true, application: safeApp });
+  } catch (err) {
+    console.error('application login error', err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
 // GET /api/application/:id  — simple retrieval (no auth). You can add auth middleware if required.
 router.get('/:id', async (req, res) => {
   try {
