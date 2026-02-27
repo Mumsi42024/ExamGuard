@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>The School — ExamGuard Int'l School</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Fonts (same as homepage) -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --navy:#061728;
+      --gold:#ffb400;
+      --white:#ffffff;
+      --muted:rgba(255,255,255,0.85);
+      --panel-mid:#213a55;
+      --panel-right:#566770;
+      --page-bg:#f7fafc;
+      --text-dark:#0b2033;
+    }
+
+    /* Reset & base */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color:var(--text-dark);
+      background:var(--page-bg);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.5;
+    }
+
+    a{color:inherit}
+    img{max-width:100%;display:block;height:auto}
+
+    /* Header */
+    header{
+      position:fixed;top:0;left:0;width:100%;height:88px;background:var(--navy);z-index:1000;
+      display:flex;align-items:center;box-shadow:0 6px 20px rgba(2,11,24,0.12);
+    }
+    .nav-container{
+      width:100%;max-width:1400px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;
+    }
+    .logo{font-family:'Playfair Display',serif;color:var(--gold);font-weight:700;font-size:1.4rem}
+    nav{display:flex;align-items:center;gap:20px}
+    nav ul{display:flex;gap:26px;list-style:none}
+    nav a, nav button{color:var(--white);text-decoration:none;font-weight:500;font-size:14px;background:none;border:0;cursor:pointer}
+    .nav-cta{background:var(--gold);color:#061728;padding:10px 18px;border-radius:4px;font-weight:700;text-decoration:none}
+    .nav-login-btn{background:#fff;color:var(--navy);padding:8px 14px;border-radius:4px;border:1px solid rgba(6,23,40,0.08)}
+
+    /* Mobile nav toggle */
+    .nav-toggle{display:none;background:transparent;border:0;color:var(--white);cursor:pointer;padding:6px}
+    .nav-toggle svg .line{fill:var(--white)}
+
+    /* Page hero */
+    .page-hero{
+      margin-top:88px;
+      background:
+        linear-gradient(180deg, rgba(6,23,40,0.6), rgba(6,23,40,0.6)),
+        url("image%3A272932");
+      background-size:cover;
+      background-position:center;
+      color:var(--white);
+      padding:72px 24px;
+    }
+    .hero-inner{max-width:1200px;margin:0 auto;display:flex;gap:40px;align-items:center;flex-wrap:wrap}
+    .hero-text{flex:1;min-width:280px}
+    .hero-text h1{font-family:'Playfair Display',serif;font-size:2.4rem;margin-bottom:8px}
+    .hero-text p{color:rgba(255,255,255,0.92);max-width:68ch;margin-bottom:18px}
+    .hero-actions{display:flex;gap:14px;flex-wrap:wrap}
+    .btn{padding:12px 18px;border-radius:6px;font-weight:700;cursor:pointer;border:0}
+    .btn-primary{background:var(--gold);color:#061728}
+    .btn-outline{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,0.18)}
+
+    /* Main content */
+    main{max-width:1200px;margin:40px auto;padding:0 24px;box-sizing:border-box}
+    .intro{background:#fff;padding:28px;border-radius:12px;box-shadow:0 8px 30px rgba(11,32,51,0.06);margin-bottom:28px}
+    .intro h2{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text-dark);margin-bottom:12px}
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 360px;
+      gap:28px;
+      align-items:start;
+    }
+
+    /* Left column sections */
+    section.card{background:#fff;padding:22px;border-radius:10px;box-shadow:0 8px 18px rgba(11,32,51,0.04)}
+    .card h3{font-family:'Playfair Display',serif;margin-bottom:10px;color:var(--text-dark)}
+    .card p{color:#374151}
+
+    /* Timeline */
+    .timeline{border-left:3px solid rgba(6,23,40,0.06);padding-left:18px;display:flex;flex-direction:column;gap:14px}
+    .timeline-item{position:relative;padding-left:18px}
+    .timeline-item::before{content:"";position:absolute;left:-29px;top:6px;width:14px;height:14px;background:var(--gold);border-radius:4px;box-shadow:0 2px 6px rgba(2,11,24,0.08)}
+    .timeline-item .year{font-weight:700;color:var(--navy);margin-bottom:4px}
+
+    /* Sidebar */
+    aside.sidebar{display:flex;flex-direction:column;gap:18px}
+    .stats{display:flex;gap:12px;flex-wrap:wrap}
+    .stat{background:linear-gradient(180deg,#fff,#f8fafc);padding:14px;border-radius:8px;flex:1;min-width:120px;text-align:center;box-shadow:0 6px 18px rgba(11,32,51,0.04)}
+    .stat .num{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--navy);font-weight:700}
+    .stat .label{font-size:13px;color:#6b7280}
+
+    .facility-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .facility{background:#fff;padding:10px;border-radius:8px;font-size:14px;color:#374151;border:1px solid rgba(11,32,51,0.04)}
+
+    /* CTA band */
+    .cta-band{margin-top:24px;padding:22px;border-radius:12px;background:linear-gradient(90deg,var(--panel-mid),var(--panel-right));color:var(--white);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .cta-band h4{font-family:'Playfair Display',serif;margin:0}
+    .cta-band a{background:transparent;color:var(--white);border:2px solid rgba(255,255,255,0.18);padding:10px 16px;border-radius:6px;font-weight:700;text-decoration:none}
+
+    footer{margin-top:48px;padding:28px 24px;background:#061728;color:var(--white)}
+    .footer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .footer-links{display:flex;gap:12px;flex-wrap:wrap}
+
+    /* Responsive */
+    @media (max-width:1000px){
+      .grid{grid-template-columns:1fr}
+      .hero-inner{padding-bottom:32px}
+      aside.sidebar{order:2}
+    }
+    @media (max-width:640px){
+      .nav-toggle{display:inline-flex}
+      nav ul{display:none}
+      .nav-cta{display:none}
+      .nav-login-btn{display:none}
+      header{height:72px}
+      .page-hero{padding:48px 16px}
+      .hero-text h1{font-size:1.6rem}
+      .timeline{padding-left:12px}
+      .facility-list{grid-template-columns:1fr}
+    }
+
+    /* small helper */
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+
+<!-- Updated header (replace your current <header>...</header> with this) -->
+<header>
+  <div class="nav-container">
+    <div class="logo">ER</div>
+
+    <!-- Mobile menu toggle -->
+    <button class="nav-toggle" aria-controls="main-nav" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+        <rect class="line" x="3" y="6" width="18" height="2" rx="1"></rect>
+        <rect class="line" x="3" y="11" width="18" height="2" rx="1"></rect>
+        <rect class="line" x="3" y="16" width="18" height="2" rx="1"></rect>
+      </svg>
+    </button>
+
+    <nav id="main-nav" aria-label="Primary navigation">
+      <ul>
+        <li><a href="#">Our school</a></li>
+        <li><a href="#">Programs &amp; Summer Camp</a></li>
+        <li><a href="#">Life &amp; Boarding School</a></li>
+        <!-- Admission Dropdown -->
+        <li class="dropdown">
+          <button class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">Admission</button>
+          <ul class="dropdown-menu">
+            <li><a href="#">Start New Application</a></li>
+            <li><a href="#">Continue Previous Application</a></li>
+          </ul>
+        </li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+
+      <!-- CTA kept inside nav so it can be shown in mobile menu -->
+      <a class="nav-cta" href="#">FIND OUT MORE</a>
+      <!-- LOGIN BUTTON -->
+      <a class="nav-login-btn" href="#">LOGIN</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Add styles for dropdown and login button -->
+<style>
+  .nav-login-btn {
+    background: #fff;
+    color: var(--navy, #061728);
+    padding: 14px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-left: 18px;
+    border: 1px solid var(--navy, #061728);
+    transition: background .18s, color .18s, box-shadow .18s;
+  }
+  .nav-login-btn:hover {
+    background: var(--navy, #061728);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(6,23,40,0.12);
+  }
+
+  /* Dropdown Style */
+  .dropdown {
+    position: relative;
+    list-style: none;
+  }
+  .dropdown-toggle {
+    background: none;
+    border: none;
+    color: var(--white, #fff);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0;
+    cursor: pointer;
+  }
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 28px;
+    left: 0;
+    background: var(--navy, #061728);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(6,23,40,0.12);
+    min-width: 180px;
+    z-index: 1102;
+    padding: 8px 0;
+  }
+  .dropdown-menu li {
+    list-style: none;
+  }
+  .dropdown-menu a {
+    color: var(--white, #fff);
+    display: block;
+    text-decoration: none;
+    padding: 12px 18px;
+    font-size: 14px;
+    transition: background .14s;
+  }
+  .dropdown-menu a:hover {
+    background: var(--gold, #ffb400);
+    color: var(--navy, #061728);
+  }
+
+  /* Dropdown show/hide logic */
+  .dropdown.open .dropdown-menu {
+    display: block;
+  }
+
+  /* Responsive: Login button stacks below CTA on mobile */
+  @media (max-width: 980px) {
+    .nav-login-btn {
+      margin-left: 0;
+      margin-top: 10px;
+      display: inline-block;
+    }
+    nav.open .nav-login-btn {
+      align-self: stretch;
+      justify-content: center;
+    }
+  }
+</style>
+
+<!-- Add Javascript for dropdown toggle -->
+<script>
+  // Dropdown toggle logic
+  document.addEventListener('DOMContentLoaded', function () {
+    const dropdown = document.querySelector('.dropdown');
+    const toggle = dropdown.querySelector('.dropdown-toggle');
+    const menu = dropdown.querySelector('.dropdown-menu');
+
+    toggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      dropdown.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', dropdown.classList.contains('open'));
+    });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function(e) {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+        toggle.setAttribute('aria-expanded', false);
+      }
+    });
+
+    // Close dropdown on escape
+    dropdown.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        dropdown.classList.remove('open');
+        toggle.setAttribute('aria-expanded', false);
+        toggle.focus();
+      }
+    });
+  });
+</script>
+
+<!-- Styles specific to the mobile menu toggle (drop into your existing styles or keep inline) -->
+<style>
+  /* Keep these in sync with your root variables */
+  :root {
+    --navy: #061728;
+    --gold: #ffb400;
+    --white: #ffffff;
+  }
+
+  /* Base header (you already have similar rules - these are the additional/override bits) */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 99px;
+    background: var(--navy);
+    z-index: 1000;
+  }
+
+  .nav-container {
+    max-width: 1400px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  /* NAV layout (desktop) */
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 34px;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    padding: 0;
+  }
+
+  nav a {
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-cta {
+    background: var(--gold);
+    color: #000;
+    padding: 16px 28px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+
+  /* Mobile: show toggle, hide inline nav */
+  .nav-toggle {
+    display: none; /* visible on small screens only */
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--white);
+  }
+
+  .nav-toggle svg .line {
+    fill: var(--white);
+    transition: transform .28s ease, opacity .18s ease;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 980px) {
+    .nav-toggle { display: inline-flex; align-items: center; justify-content: center; z-index: 1101; }
+
+    /* hide desktop nav and CTA (we show them in mobile menu instead) */
+    nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 99px; /* below header */
+      background: var(--navy);
+      padding: 18px 20px;
+      display: none; /* revealed when .open is added */
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 18px 40px rgba(2,11,24,0.2);
+      z-index: 1100;
+    }
+
+    nav.open {
+      display: flex;
+      animation: navFade .18s ease both;
+    }
+
+    @keyframes navFade {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    nav ul {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    nav ul li { list-style: none; }
+
+    .nav-cta {
+      align-self: stretch;
+      display: inline-flex;
+      justify-content: center;
+      padding: 12px 16px;
+    }
+
+    /* transform hamburger into an 'X' when open */
+    .nav-toggle.open svg .line:nth-child(1) {
+      transform: translateY(5px) rotate(45deg);
+    }
+    .nav-toggle.open svg .line:nth-child(2) {
+      opacity: 0;
+    }
+    .nav-toggle.open svg .line:nth-child(3) {
+      transform: translateY(-5px) rotate(-45deg);
+    }
+
+    /* prevent page scroll when menu open */
+    body.no-scroll {
+      overflow: hidden;
+    }
+  }
+</style>
+
+<!-- Minimal JS to toggle the mobile menu -->
+<script>
+  (function () {
+    const btn = document.querySelector('.nav-toggle');
+    const nav = document.getElementById('main-nav');
+
+    if (!btn || !nav) return;
+
+    function setOpen(isOpen) {
+      btn.setAttribute('aria-expanded', String(isOpen));
+      btn.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+      btn.classList.toggle('open', isOpen);
+      nav.classList.toggle('open', isOpen);
+      document.body.classList.toggle('no-scroll', isOpen);
+    }
+
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      setOpen(!expanded);
+    });
+
+    // Close menu on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('open')) {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+
+    // Close when resizing back to desktop to keep state consistent
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 980 && nav.classList.contains('open')) {
+        setOpen(false);
+      }
+    });
+
+    // Close on click outside the nav (optional, keeps it simple)
+    document.addEventListener('click', (e) => {
+      if (!nav.classList.contains('open')) return;
+      const target = e.target;
+      if (!nav.contains(target) && !btn.contains(target)) {
+        setOpen(false);
+      }
+    });
+  })();
+</script>
+
+  <!-- Hero -->
+  <section class="page-hero" aria-labelledby="school-hero-heading" role="region">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1 id="school-hero-heading">The School</h1>
+        <p>
+          Discover ExamGuard Int'l School — a heritage of excellence blending a strong academic tradition
+          with modern innovation. We prepare students to thrive in higher education and life with a global mindset.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#visit">VISIT CAMPUS</a>
+          <a class="btn btn-outline" href="#admissions">ADMISSIONS</a>
+        </div>
+      </div>
+
+      <!-- Small hero stats -->
+      <div style="min-width:220px;display:flex;flex-direction:column;gap:12px">
+        <div style="background:rgba(255,255,255,0.06);padding:14px;border-radius:8px;text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold);font-weight:700">125+</div>
+          <div class="muted">Years of heritage</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.06);padding:14px;border-radius:8px;text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold);font-weight:700">50+</div>
+          <div class="muted">Nationalities</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <div class="intro card" role="article" aria-labelledby="overview-heading">
+      <h2 id="overview-heading">Overview</h2>
+      <p>
+        ExamGuard Int'l School is an academically rigorous and culturally diverse boarding school. We combine small class sizes,
+        individualized coaching and a rich extracurricular program to develop confident, curious and resilient learners.
+        Our pastoral care and residential life support students' wellbeing and growth.
+      </p>
+    </div>
+
+    <div class="grid">
+      <div>
+        <!-- History / Timeline -->
+        <section class="card" aria-labelledby="history-heading">
+          <h3 id="history-heading">History & milestones</h3>
+          <div class="timeline" aria-hidden="false">
+            <div class="timeline-item">
+              <div class="year">1899</div>
+              <div class="muted">Founded as a local boarding institution focused on classical studies.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="year">1978</div>
+              <div class="muted">Expanded with new science and sports facilities and international partnerships begin.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="year">2007</div>
+              <div class="muted">Transition to a fully bilingual curriculum and strengthened university guidance.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="year">2024</div>
+              <div class="muted">Invested in STEAM learning spaces and boarding house refurbishments.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Academic philosophy -->
+        <section class="card" style="margin-top:20px" aria-labelledby="philosophy-heading">
+          <h3 id="philosophy-heading">Academic philosophy</h3>
+          <p>
+            Our teaching approach balances academic challenge with personalized support. We emphasize critical thinking,
+            research-led learning and bilingual competence while providing pathways to global universities (IB, French Bac).
+            Small classes and a 4:1 coaching ratio ensure each student receives mentoring tailored to their goals.
+          </p>
+        </section>
+
+        <!-- Visiting & admissions -->
+        <section id="visit" class="card" style="margin-top:20px" aria-labelledby="visit-heading">
+          <h3 id="visit-heading">Visit & admissions</h3>
+          <p>
+            Book a campus visit or join an open day. Admissions includes a simple application, assessment and interview. We
+            welcome enquiries from families worldwide and provide assistance with visas and boarding placement.
+          </p>
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <a class="btn btn-primary" href="/marketting/contact.html">Book a visit</a>
+            <a class="btn btn-outline" href="/marketting/apply.html">Start application</a>
+          </div>
+        </section>
+      </div>
+
+      <aside class="sidebar" aria-labelledby="about-sidebar">
+        <div class="card" aria-labelledby="stats-heading">
+          <h3 id="stats-heading">Key facts</h3>
+          <div class="stats" role="list" aria-label="School key facts">
+            <div class="stat" role="listitem">
+              <div class="num">240</div>
+              <div class="label">Students</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="num">4:1</div>
+              <div class="label">Coaching ratio</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="num">50+</div>
+              <div class="label">Nationalities</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" aria-labelledby="facilities-heading">
+          <h3 id="facilities-heading">Campus & facilities</h3>
+          <div class="facility-list" role="list" aria-label="facility list">
+            <div class="facility" role="listitem">Science & STEAM labs</div>
+            <div class="facility" role="listitem">Library & study suites</div>
+            <div class="facility" role="listitem">Sports fields & pool</div>
+            <div class="facility" role="listitem">Boarding houses</div>
+          </div>
+        </div>
+
+        <div class="card" aria-labelledby="awards-heading">
+          <h3 id="awards-heading">Recognition</h3>
+          <p class="muted">Consistently high university placement rates, national awards for pastoral care and a strong record in international competitions.</p>
+        </div>
+      </aside>
+    </div>
+  </main>
+<!-- "Ready to take the next step?" — full-width CTA section (drop this where you want it in mart/pg1.html) -->
+<section class="cta-hero" aria-labelledby="cta-hero-heading">
+  <style>
+    /* Self-contained CTA hero styled to match the site (fonts & sizes duplicated) */
+    :root {
+      --cta-navy: #061728;   /* crisp, deep navy (sharp and bright enough against gold) */
+      --cta-gold: #ffb400;   /* bright, rich gold for accents and primary button */
+      --white: #ffffff;
+      --muted-white: rgba(255,255,255,0.92);
+    }
+
+    .cta-hero {
+      background: var(--cta-navy);
+      color: var(--white);
+      padding: 72px 0;
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      overflow: hidden;
+    }
+
+    .cta-hero .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 40px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    /* Heading block (Playfair for headings to match other sections) */
+    .cta-hero h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 40px;
+      line-height: 1.08;
+      margin: 0 0 12px 0;
+      font-weight: 700;
+      color: var(--white);
+      text-shadow: 0 2px 0 rgba(0,0,0,0.06);
+    }
+
+    .cta-hero .sub {
+      font-family: 'Playfair Display', serif;
+      color: var(--cta-gold);
+      font-size: 18px;
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+
+    .cta-hero p.lead {
+      color: var(--muted-white);
+      max-width: 840px;
+      margin: 0 auto 26px auto;
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    /* Buttons row */
+    .cta-actions {
+      display: inline-flex;
+      gap: 16px;
+      margin-bottom: 34px;
+      align-items: center;
+    }
+
+    .btn {
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 12px 28px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      font-size: 14px;
+      border: none;
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+
+    .btn-primary {
+      background: var(--cta-gold);
+      color: #061728;
+      box-shadow: 0 8px 24px rgba(255,180,0,0.14);
+    }
+
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(255,180,0,0.18); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--white);
+      border: 2px solid rgba(255,255,255,0.10);
+      padding: 11px 26px;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.03);
+      transform: translateY(-3px);
+    }
+
+    /* Benefits row (icons + label) */
+    .benefits {
+      display: flex;
+      gap: 36px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .benefit {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted-white);
+      font-size: 14px;
+    }
+
+    .benefit svg {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+    }
+
+    /* Icon circle (gold ring with navy check) */
+    .icon-circle {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px solid var(--cta-gold);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.18);
+    }
+
+    .benefit .label {
+      color: var(--muted-white);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    /* Layout & spacing tweaks */
+    @media (max-width: 980px) {
+      .cta-hero h2 { font-size: 34px; }
+      .cta-hero .sub { font-size: 16px; }
+      .cta-actions { gap: 12px; flex-wrap: wrap; }
+      .benefits { gap: 18px; }
+    }
+
+    @media (max-width: 520px) {
+      .cta-hero h2 { font-size: 26px; }
+      .cta-hero .sub { font-size: 14px; }
+      .cta-hero p.lead { font-size: 14px; padding: 0 12px; }
+      .btn { width: 100%; box-sizing: border-box; }
+      .cta-actions { flex-direction: column; width: 100%; align-items: center; }
+      .benefits { gap: 12px; font-size: 13px; }
+    }
+  </style>
+
+  <div class="container">
+    <h2 id="cta-hero-heading">Ready to take the next step?</h2>
+    <div class="sub">Where the world's most beautiful futures begin</div>
+
+    <p class="lead">
+      Whether you are considering College, High School, the IB Diploma or FLE, our admissions team is here to guide you every step of the way.
+    </p>
+
+    <div class="cta-actions" role="group" aria-label="Call to action buttons">
+      <a class="btn btn-primary" href="#" role="button" aria-label="Inquiry">INQUIRY</a>
+      <a class="btn btn-outline" href="#" role="button" aria-label="Apply now">APPLY NOW</a>
+    </div>
+
+    <div class="benefits" aria-hidden="false">
+      <div class="benefit">
+        <div class="icon-circle" aria-hidden="true">
+          <!-- gold-rimmed check -->
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="10" stroke="none" fill="transparent"/>
+            <path d="M7.5 12.5l2.4 2.6L16.5 9" stroke="var(--cta-gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="label">More than 50 nationalities</div>
+      </div>
+
+      <div class="benefit">
+        <div class="icon-circle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <path d="M7.5 12.5l2.4 2.6L16.5 9" stroke="var(--cta-gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="label">Global alumni network</div>
+      </div>
+
+      <div class="benefit">
+        <div class="icon-circle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <path d="M7.5 12.5l2.4 2.6L16.5 9" stroke="var(--cta-gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <div class="label">Academic excellence</div>
+      </div>
+    </div>
+  </div>
+</section>
+  <!-- FAQ section — insert where you want this block to appear in mart/pg1.html -->
+<section class="faq-section" aria-labelledby="faq-heading">
+  <style>
+    /* Self-contained FAQ styles (fonts & sizing follow page scale) */
+    .faq-section {
+      padding: 72px 0;
+      background: #ffffff;
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #0b2033;
+    }
+
+    .faq-section .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      box-sizing: border-box;
+    }
+
+    /* Two-column grid: left editorial column / right accordion column */
+    .faq-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* Left column editorial */
+    .faq-left .eyebrow {
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .faq-left h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 34px;
+      margin: 0 0 18px 0;
+      font-weight: 700;
+      color: #0b2033;
+    }
+
+    .faq-left p {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #374151;
+      max-width: 380px;
+      margin-bottom: 22px;
+    }
+
+    .contact-cta {
+      display: inline-block;
+      padding: 12px 20px;
+      border: 1px solid #0b2033;
+      color: #0b2033;
+      text-decoration: none;
+      font-weight: 700;
+      border-radius: 4px;
+      background: transparent;
+      font-size: 14px;
+      box-shadow: none;
+    }
+
+    .contact-cta:hover {
+      background: rgba(11,32,51,0.04);
+    }
+
+    /* Right column — accordion list */
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Using <details> for accessibility with custom appearance */
+    details.faq-item {
+      border: 1px solid #111; /* thin dark border like screenshot */
+      padding: 18px 22px;
+      border-radius: 2px;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    details.faq-item summary {
+      list-style: none; /* remove default triangle */
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0;
+      margin: 0;
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+      outline: none;
+    }
+
+    /* Custom chevron */
+    details.faq-item summary::marker { content: ''; }
+    details.faq-item summary::after {
+      content: "▾";
+      font-size: 18px;
+      color: #111827;
+      transition: transform .18s ease;
+    }
+    details.faq-item[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    /* Answer content */
+    details.faq-item .faq-content {
+      margin-top: 14px;
+      color: #374151;
+      font-size: 15px;
+      line-height: 1.75;
+      padding-right: 6px;
+    }
+
+    /* Slightly more pronounced padding on larger items to match screenshot spacing */
+    details.faq-item[open] {
+      padding-bottom: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 980px) {
+      .faq-grid {
+        grid-template-columns: 1fr;
+      }
+      .faq-left h2 { font-size: 28px; }
+      .faq-left p { max-width: 100%; }
+      details.faq-item summary { font-size: 16px; }
+    }
+
+    @media (max-width: 520px) {
+      .faq-section { padding: 48px 0; }
+      .faq-left h2 { font-size: 22px; }
+      details.faq-item { padding: 14px; }
+      details.faq-item summary::after { font-size: 16px; }
+    }
+  </style>
+
+  <div class="container">
+    <div class="faq-grid">
+      <div class="faq-left" aria-hidden="false">
+        <div class="eyebrow">Frequently Asked Questions</div>
+
+        <h2 id="faq-heading">Answers to your questions</h2>
+
+        <p>
+          Choosing the right school is an important decision, and we know that
+          families need clarity before starting the admissions process. Our FAQs
+          answer the most common questions about admissions, teaching, and
+          boarding school life to help you make your choice with confidence.
+        </p>
+
+        <a class="contact-cta" href="#" role="button" aria-label="Contact us">CONTACT US</a>
+      </div>
+
+      <div class="faq-right" aria-hidden="false">
+        <div class="faq-list" role="list">
+          <details class="faq-item" role="listitem" aria-labelledby="q1">
+            <summary id="q1">Where is the ExamGuard Int'l School located?</summary>
+            <div class="faq-content">
+              ExamGuard Int'l School is located in Ile Ife, Osun State, Nigeria. Replace this text with the precise address and a short description of the campus and surroundings.
+            </div>
+          </details>
+
+          <details class="faq-item" role="listitem" aria-labelledby="q2">
+            <summary id="q2">How many students does the ExamGuard Int'l School have?</summary>
+            <div class="faq-content">
+              The school welcomes approximately 240 students from over 50 nationalities. Class sizes are intentionally small to provide close academic support and pastoral care.
+            </div>
+          </details>
+
+          <details class="faq-item" role="listitem" aria-labelledby="q3">
+            <summary id="q3">What makes the ExamGuard Int'l School unique?</summary>
+            <div class="faq-content">
+              Our blend of long-standing boarding traditions with modern, internationally-recognised programs — such as the IBDP and bilingual French pathways — creates a distinctive learning environment.
+            </div>
+          </details>
+
+          <details class="faq-item" role="listitem" aria-labelledby="q4">
+            <summary id="q4">What are the annual fees?</summary>
+            <div class="faq-content">
+              Fees vary by program and boarding option. Please contact admissions for the current fees and available financial assistance.
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Minor enhancement: toggle aria-expanded for native <details> for improved assistive support
+    (function () {
+      const items = document.querySelectorAll('.faq-item');
+      items.forEach(item => {
+        const summary = item.querySelector('summary');
+        // initialize aria-expanded
+        summary.setAttribute('aria-expanded', item.hasAttribute('open') ? 'true' : 'false');
+
+        summary.addEventListener('click', () => {
+          // Wait for the native toggle to complete
+          requestAnimationFrame(() => {
+            summary.setAttribute('aria-expanded', item.hasAttribute('open') ? 'true' : 'false');
+          });
+        });
+
+        // allow Enter/Space to toggle from keyboard (native but ensure consistent behavior)
+        summary.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            summary.click();
+          }
+        });
+      });
+    })();
+  </script>
+</section>
+  <section class="news-section" aria-labelledby="news-heading">
+  <style>
+    /* News section - self contained so you can drop this anywhere */
+    .news-section {
+      background: #f8fafb;
+      padding: 56px 0 36px;
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #0b2033;
+    }
+
+    .news-section .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 40px;
+      box-sizing: border-box;
+    }
+
+    .news-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .news-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      margin: 0 0 6px 0;
+      color: #0b2033;
+      font-weight: 700;
+    }
+
+    .news-header p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    /* Grid */
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+      align-items: stretch;
+    }
+
+    .news-card {
+      background: #fff;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 6px 18px rgba(2,11,24,0.06);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease;
+      min-height: 200px;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    .news-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 36px rgba(2,11,24,0.12);
+    }
+
+    .news-card .thumb {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      aspect-ratio: 16/12; /* matches screenshot-ish proportions */
+      vertical-align: middle;
+    }
+
+    /* top-right badge (rounded square with small inset icon) */
+    .news-card .badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.96);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 14px rgba(2,11,24,0.12);
+      border: 1px solid rgba(2,11,24,0.06);
+      z-index: 3;
+    }
+
+    .news-card .badge svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      fill: none;
+      stroke: #061728;
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* optional caption overlay bottom-left */
+    .news-card .caption {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      background: rgba(255,255,255,0.92);
+      color: #061728;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(2,11,24,0.06);
+      z-index: 2;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Accessibility focus state */
+    .news-card:focus {
+      outline: 3px solid rgba(6,23,40,0.12);
+      outline-offset: 2px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .news-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 520px) {
+      .news-grid { grid-template-columns: 1fr; gap: 12px; }
+      .news-section .container { padding: 0 20px; }
+      .news-header h2 { font-size: 20px; }
+    }
+  </style>
+
+  <div class="container">
+    <div class="news-header">
+      <h2 id="news-heading">News</h2>
+      <p>Discover the highlights of school life, celebrations and student projects.</p>
+    </div>
+
+    <div class="news-grid" role="list" aria-label="Latest news and highlights">
+      <!-- Card 1 -->
+      <article class="news-card" role="listitem" tabindex="0" aria-labelledby="n1-title">
+        <img class="thumb" src="image%3A272934" alt="Theatre audience in opera house">
+        <div class="badge" aria-hidden="true">
+          <!-- small rounded-square icon matching screenshot -->
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6" rx="1"></rect>
+          </svg>
+        </div>
+        <!-- optional caption -->
+        <div class="caption" id="n1-title">School trip to the Opera</div>
+      </article>
+
+      <!-- Card 2 -->
+      <article class="news-card" role="listitem" tabindex="0" aria-labelledby="n2-title">
+        <img class="thumb" src="image%3A272931" alt="Student hitting golf shot from bunkers">
+        <div class="badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6" rx="1"></rect>
+          </svg>
+        </div>
+        <div class="caption" id="n2-title">Golf tournament highlights</div>
+      </article>
+
+      <!-- Card 3 -->
+      <article class="news-card" role="listitem" tabindex="0" aria-labelledby="n3-title">
+        <img class="thumb" src="image%3A272932" alt="Student listening in classroom">
+        <div class="badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6" rx="1"></rect>
+          </svg>
+        </div>
+        <div class="caption" id="n3-title">Bilingualism in action</div>
+      </article>
+
+      <!-- Card 4 -->
+      <article class="news-card" role="listitem" tabindex="0" aria-labelledby="n4-title">
+        <img class="thumb" src="images6.jpg" alt="Students visiting natural history exhibition">
+        <div class="badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6" rx="1"></rect>
+          </svg>
+        </div>
+        <div class="caption" id="n4-title">Museum learning day</div>
+      </article>
+    </div>
+  </div>
+</section>
+  <section class="edr-footer" aria-labelledby="footer-heading">
+  <style>
+    /* Ecole des Roches - footer replicate */
+    .edr-footer {
+      --navy-deep: #06203a;
+      --navy-mid: #0b2740;
+      --gold: #f6b83f;
+      --muted: #cbd5e1;
+      color: #e6edf6;
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy-mid) 100%);
+      padding: 28px 0 60px;
+      position: relative;
+    }
+
+    /* Top crest stripe */
+    .edr-footer .crest-strip {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+      padding: 14px 0;
+      display: flex;
+      justify-content: center;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .edr-footer .crest-strip img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+      opacity: 0.98;
+      display: block;
+    }
+
+    .edr-footer .container {
+      max-width: 1400px;
+      margin: 28px auto 0;
+      padding: 0 40px;
+      box-sizing: border-box;
+    }
+
+    .edr-footer-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* LEFT: brand + contact */
+    .edr-brand {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .edr-brand .logo-wrap {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .edr-brand .logo {
+      background: var(--gold);
+      color: var(--navy-mid);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edr-brand .brand-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: #f8e6b0;
+      margin-top: 6px;
+    }
+
+    .edr-contact {
+      margin-top: 12px;
+      color: #d6e3f6;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 360px;
+    }
+
+    .edr-contact a { color: #d6e3f6; text-decoration: none; }
+
+    .footer-social {
+      margin-top: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .social-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .careers-btn {
+      margin-top: 18px;
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: transparent;
+      color: #f8f7ee;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Middle columns: list of links */
+    .footer-col {
+      color: #dbe9ff;
+    }
+
+    .footer-col h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      color: var(--gold);
+      margin: 6px 0 12px;
+      font-weight: 700;
+    }
+
+    .footer-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      line-height: 2;
+      font-size: 14px;
+    }
+
+    .footer-nav a {
+      color: #dbe9ff;
+      text-decoration: none;
+      opacity: 0.95;
+    }
+
+    .footer-nav a:hover {
+      text-decoration: underline;
+    }
+
+    /* Right column: download with simple toggles */
+    .download-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 14px;
+      line-height: 2;
+    }
+
+    .download-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #dbe9ff;
+    }
+
+    .download-item summary {
+      list-style: none;
+      cursor: pointer;
+      color: #dbe9ff;
+      font-weight: 600;
+    }
+
+    .download-links {
+      margin-top: 8px;
+      padding-left: 0;
+    }
+
+    .download-links a {
+      display: block;
+      color: #dbe9ff;
+      text-decoration: none;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+    }
+
+    /* fine print bottom */
+    .footer-bottom {
+      margin-top: 28px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      border-top: 1px solid rgba(255,255,255,0.02);
+      padding-top: 18px;
+    }
+.admissions-chat {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 999;
+}
+
+.chat-icon {
+  width: 44px;
+  height: 44px;
+  background: #061728;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  box-shadow: 0 6px 12px rgba(2,11,24,0.2);
+}
+
+
+    /* Responsive behaviour */
+    @media (max-width: 1100px) {
+      .edr-footer .container { padding: 0 28px; }
+      .edr-footer .crest-strip { gap: 18px; padding: 10px 0; }
+      .edr-footer .crest-strip img { height: 36px; }
+      .edr-footer-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+      .edr-brand .brand-name { font-size: 18px; }
+    }
+
+    @media (max-width: 520px) {
+      .edr-footer { padding-bottom: 90px; }
+      .edr-footer .container { padding: 0 16px; }
+      .edr-footer-grid { grid-template-columns: 1fr; }
+      .edr-contact { max-width: 100%; }
+      .admissions-chat { right: 12px; bottom: 12px; }
+    }
+  </style>
+
+  <!-- crests row -->
+  <div class="crest-strip" aria-hidden="true">
+    <!-- Replace srcs with real crest assets; kept generic placeholders -->
+    <img src="crest-1.png" alt="Crest 1">
+    <img src="crest-2.png" alt="Crest 2">
+    <img src="crest-3.png" alt="Crest 3">
+    <img src="crest-4.png" alt="Crest 4">
+    <img src="crest-5.png" alt="Crest 5">
+    <img src="crest-6.png" alt="Crest 6">
+  </div>
+
+  <div class="container" id="footer-heading">
+    <div class="edr-footer-grid" role="navigation" aria-label="Footer navigation">
+      <!-- Left: Logo + contact -->
+      <div>
+        <div class="edr-brand" role="banner" aria-label="Ecole des Roches branding">
+          <div class="logo-wrap">
+            <div class="logo" aria-hidden="true">ER</div>
+            <div>
+              <div class="brand-name">ExamGuard Int'l School</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:4px;">Osun State, Nigeria</div>
+            </div>
+          </div>
+        </div>
+
+        <address class="edr-contact">
+          295 Avenue Edmond Demolins, 27130 Ile Ife, Osun State, Nigeria<br>
+          Phone: <a href="tel:+02277413351">+02 77 41 33 51</a><br>
+          Email: <a href="mailto:contact@ecoledesroches.com">contact@examguard.com</a>
+        </address>
+
+        <div class="footer-social" aria-label="Social links">
+          <a class="social-btn" href="#" aria-label="Facebook">
+            <!-- facebook svg -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a4 4 0 0 0-4 4v3H8v4h3v8h4v-8h3l1-4h-4V6a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a class="social-btn" href="#" aria-label="Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3"/><path d="M17.5 6.5h.01"/></svg>
+          </a>
+          <a class="social-btn" href="#" aria-label="LinkedIn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-14h4v2"/><rect x="2" y="9" width="4" height="11"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+        </div>
+
+        <a class="careers-btn" href="#" role="button" aria-label="Careers">Careers</a>
+      </div>
+
+      <!-- Discover column -->
+      <div class="footer-col">
+        <h4>DISCOVER</h4>
+        <ul class="footer-nav" aria-label="Discover links">
+          <li><a href="#">Admissions</a></li>
+          <li><a href="#">Alumni Association</a></li>
+          <li><a href="#">Life & Boarding School</a></li>
+          <li><a href="#">Our school</a></li>
+          <li><a href="#">Programs</a></li>
+        </ul>
+      </div>
+
+      <!-- To start up column -->
+      <div class="footer-col">
+        <h4>TO START UP</h4>
+        <ul class="footer-nav" aria-label="Start up links">
+          <li><a href="#">To apply</a></li>
+          <li><a href="#">Request information</a></li>
+        </ul>
+      </div>
+
+      <!-- Download column -->
+      <div class="footer-col">
+        <h4>DOWNLOAD</h4>
+        <ul class="download-list" aria-label="Downloads">
+          <li class="download-item">
+            <div>Application form</div>
+          </li>
+          <li class="download-item" style="margin-top:8px;">
+            <details style="color:inherit;">
+              <summary>Tuition</summary>
+              <div class="download-links" role="list">
+                <a role="listitem" href="#">2025 Fees (PDF)</a>
+                <a role="listitem" href="#">Scholarships (PDF)</a>
+              </div>
+            </details>
+          </li>
+          <li class="download-item" style="margin-top:8px;">
+            <details style="color:inherit;">
+              <summary>Program brochures</summary>
+              <div class="download-links" role="list">
+                <a role="listitem" href="#">IB Program (PDF)</a>
+                <a role="listitem" href="#">FLE & Summer (PDF)</a>
+              </div>
+            </details>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      © ExamGuard Int'l School — All rights reserved • Privacy policy • Terms
+    </div>
+  </div>
+
+</body>
+</html>
