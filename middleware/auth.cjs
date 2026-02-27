@@ -1,56 +1,41 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-// verify token, attach user to req.user
-async function authenticateJWT(req, res, next) {
+export function authenticateJWT(req, res, next) {
   try {
-    const auth = req.headers.authorization || '';
-    const m = auth.match(/^Bearer\s+(.+)$/i);
-    if (!m) {
+    const authHeader = req.get('authorization') || '';
+    let token = null;
+
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token) {
       return res.status(401).json({ ok: false, message: 'Missing authorization token' });
     }
-    const token = m[1];
-    let payload;
-    try {
-      payload = jwt.verify(token, JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({ ok: false, message: 'Invalid or expired token' });
-    }
-    // payload expected to contain { sub: userId, role }
-    if (!payload || !payload.sub) return res.status(401).json({ ok: false, message: 'Invalid token payload' });
 
-    const user = await User.findById(payload.sub).select('-passwordHash').lean();
-    if (!user) return res.status(401).json({ ok: false, message: 'User not found' });
+    const payload = jwt.verify(token, JWT_SECRET);
 
-    req.user = user;
+    // Normalize common claim names to req.user.id
+    const id = payload.sub || payload.id || payload.userId;
+    req.user = { ...payload, id };
+
     next();
   } catch (err) {
-    console.error('authenticateJWT error', err);
-    res.status(500).json({ ok: false, message: 'Server error' });
+    return res.status(401).json({ ok: false, message: 'Invalid or expired token' });
   }
 }
 
-// require at least one of the provided roles
-function requireRole(...roles) {
+export function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
+    if (!req.user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
     if (roles.length === 0) return next();
-    if (roles.includes(req.user.role)) return next();
-    return res.status(403).json({ ok: false, message: 'Insufficient permissions' });
+    const userRole = req.user.role;
+    if (!userRole) return res.status(403).json({ ok: false, message: 'Forbidden' });
+    if (roles.includes(userRole)) return next();
+    return res.status(403).json({ ok: false, message: 'Forbidden' });
   };
 }
-
-// create token
-function signToken(user) {
-  const payload = { sub: user._id.toString(), role: user.role };
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-}
-
-module.exports = {
-  authenticateJWT,
-  requireRole,
-  signToken
-};
