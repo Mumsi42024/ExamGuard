@@ -1,10 +1,15 @@
-const express = require('express');
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import bcrypt from 'bcryptjs';
+import { fileURLToPath } from 'url';
+import Application from '../models/Application.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const bcrypt = require('bcryptjs');
-const Application = require('../models/Application');
 
 const UPLOAD_BASE = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads', 'applications');
 fs.mkdirSync(UPLOAD_BASE, { recursive: true });
@@ -17,7 +22,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     // Use timestamp + sanitized original name
     const safe = file.originalname.replace(/\s+/g, '_').replace(/[^\w.-]/g, '');
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2,8)}-${safe}`);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`);
   }
 });
 
@@ -34,8 +39,8 @@ const upload = multer({
 
 // Fields expected by the application form
 const cpUpload = upload.fields([
-  { name: 'idFile', maxCount: 1 },       // id-file input -> name="idFile"
-  { name: 'transcripts', maxCount: 10 }  // transcripts input -> name="transcripts"
+  { name: 'idFile', maxCount: 1 }, // id-file input -> name="idFile"
+  { name: 'transcripts', maxCount: 10 } // transcripts input -> name="transcripts"
 ]);
 
 // Helper to map multer file objects to small file descriptors
@@ -107,7 +112,6 @@ router.post('/', cpUpload, async (req, res) => {
     await appDoc.save();
 
     // (Optional) send confirmation email here if your app supports it
-    // Example: sendEmail({ to: appDoc.email, subject: 'Application received', text: 'We received...' });
 
     res.status(201).json({ ok: true, application: { id: appDoc._id, username: appDoc.username, status: appDoc.status } });
   } catch (err) {
@@ -192,4 +196,4 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
