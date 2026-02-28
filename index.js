@@ -42,7 +42,6 @@ import invoicesRouter from './routes/invoices.js';
 import resourcesRouter from './routes/resources.js';
 import messagesRouter from './routes/messages.js';
 import assignmentsRouter from './routes/assignments.js';
-import timetableRouter from './routes/timetable.js';
 import studentsRouter from './routes/students.js';
 import resultsRouter from './routes/results.js';
 
@@ -162,7 +161,6 @@ app.use('/api/invoices', invoicesRouter);
 app.use('/api/resources', resourcesRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/assignments', assignmentsRouter);
-app.use('/api/timetable', timetableRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/results', resultsRouter);
 app.use((err, req, res, next) => {
