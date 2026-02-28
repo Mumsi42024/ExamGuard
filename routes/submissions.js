@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const { authenticateJWT, requireRole } = require('../middleware/auth');
+import express from 'express';
+import mongoose from 'mongoose';
+import { authenticateJWT, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -28,31 +28,40 @@ router.post('/:examId/submit', authenticateJWT, requireRole('student'), async (r
       status: 'submitted'
     });
     await s.save();
-    res.status(201).json({ ok:true, submission: s });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    res.status(201).json({ ok: true, submission: s });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
 // Admin/teacher: list submissions with filters
-router.get('/', authenticateJWT, requireRole('teacher','admin'), async (req,res) => {
+router.get('/', authenticateJWT, requireRole('teacher','admin'), async (req, res) => {
   try {
     const q = {};
     if (req.query.examId) q.examId = req.query.examId;
     if (req.query.studentId) q.studentId = req.query.studentId;
-    const subs = await Submission.find(q).sort({ createdAt:-1 }).limit(500).lean();
-    res.json({ ok:true, submissions: subs });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    const subs = await Submission.find(q).sort({ createdAt: -1 }).limit(500).lean();
+    res.json({ ok: true, submissions: subs });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
 // Update submission (grade / change status)
-router.put('/:id', authenticateJWT, requireRole('teacher','admin'), async (req,res) => {
+router.put('/:id', authenticateJWT, requireRole('teacher','admin'), async (req, res) => {
   try {
     const upd = {};
     if (req.body.score !== undefined) upd.score = req.body.score;
     if (req.body.max !== undefined) upd.max = req.body.max;
     if (req.body.status) upd.status = req.body.status;
-    const s = await Submission.findByIdAndUpdate(req.params.id, upd, { new:true });
-    res.json({ ok:true, submission: s });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    const s = await Submission.findByIdAndUpdate(req.params.id, upd, { new: true });
+    res.json({ ok: true, submission: s });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
-module.exports = router;
+export default router;
