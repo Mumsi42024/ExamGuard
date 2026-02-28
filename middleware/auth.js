@@ -2,6 +2,11 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret';
 
+/**
+ * authenticateJWT
+ * - looks for Authorization: Bearer <token> OR req.cookies.token
+ * - verifies token and attaches req.user = { id, role, ...payload }
+ */
 export function authenticateJWT(req, res, next) {
   try {
     const authHeader = req.get('authorization') || '';
@@ -29,6 +34,10 @@ export function authenticateJWT(req, res, next) {
   }
 }
 
+/**
+ * requireRole(...roles)
+ * - simple RBAC middleware; pass roles to allow (e.g. requireRole('admin','teacher'))
+ */
 export function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ ok: false, message: 'Unauthorized' });
