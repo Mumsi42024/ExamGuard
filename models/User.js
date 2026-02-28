@@ -1,14 +1,16 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, index: true, unique: true },
   email: { type: String, index: true, unique: true, sparse: true },
   passwordHash: { type: String, required: true },
 
-  // Roles: student, teacher, admin, staff, parent, etc.
-  role: { type: String, enum: ['student', 'teacher', 'admin', 'staff', 'parent'], default: 'student' },
+  role: {
+    type: String,
+    enum: ['student', 'teacher', 'admin', 'staff', 'parent'],
+    default: 'student'
+  },
 
-  // optional profile fields
   firstName: String,
   lastName: String,
   phone: String,
@@ -18,13 +20,11 @@ const UserSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-// keep updatedAt current
 UserSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-// helper to return safe object
 UserSchema.methods.toSafeObject = function () {
   return {
     id: this._id.toString(),
@@ -40,4 +40,6 @@ UserSchema.methods.toSafeObject = function () {
   };
 };
 
-module.exports = mongoose.model('User', UserSchema);
+const User = mongoose.model('User', UserSchema);
+
+export default User;
