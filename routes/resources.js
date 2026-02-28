@@ -1,13 +1,13 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { authenticateJWT, requireRole } = require('../middleware/auth');
+import express from 'express';
+import mongoose from 'mongoose';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { authenticateJWT, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
-const UPLOAD_BASE = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads', 'resources');
+const UPLOAD_BASE = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads', 'resources');
 fs.mkdirSync(UPLOAD_BASE, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -30,20 +30,23 @@ const ResourceSchema = new mongoose.Schema({
 const Resource = mongoose.models.Resource || mongoose.model('Resource', ResourceSchema);
 
 // list resources (public)
-router.get('/', async (req,res) => {
+router.get('/', async (req, res) => {
   try {
     const q = {};
     if (req.query.type) q.type = req.query.type;
     const items = await Resource.find(q).sort({ createdAt: -1 }).limit(200).lean();
-    res.json({ ok:true, resources: items });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    res.json({ ok: true, resources: items });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
 // upload resource (teacher/admin)
-router.post('/', authenticateJWT, requireRole('teacher','admin'), upload.single('file'), async (req,res) => {
+router.post('/', authenticateJWT, requireRole('teacher','admin'), upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
-    if (!file) return res.status(400).json({ ok:false, message:'File required' });
+    if (!file) return res.status(400).json({ ok: false, message: 'File required' });
     const r = new Resource({
       title: req.body.title || file.originalname,
       type: req.body.type || file.mimetype,
@@ -52,17 +55,23 @@ router.post('/', authenticateJWT, requireRole('teacher','admin'), upload.single(
       meta: { originalName: file.originalname, size: file.size, mime: file.mimetype }
     });
     await r.save();
-    res.status(201).json({ ok:true, resource: r });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    res.status(201).json({ ok: true, resource: r });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
 // get resource
-router.get('/:id', async (req,res) => {
+router.get('/:id', async (req, res) => {
   try {
     const r = await Resource.findById(req.params.id).lean();
-    if (!r) return res.status(404).json({ ok:false, message:'Not found' });
-    res.json({ ok:true, resource: r });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+    if (!r) return res.status(404).json({ ok: false, message: 'Not found' });
+    res.json({ ok: true, resource: r });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
-module.exports = router;
+export default router;
