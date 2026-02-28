@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const { authenticateJWT } = require('../middleware/auth');
+import express from 'express';
+import mongoose from 'mongoose';
+import { authenticateJWT } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -18,11 +18,11 @@ router.get('/me', authenticateJWT, async (req, res) => {
     const promises = [];
     if (Exam) promises.push(Exam.find({ classId: user.class }).sort({ date: 1 }).limit(10).lean());
     else promises.push(Promise.resolve([]));
-    if (Assignment) promises.push(Assignment.find({ classId: user.class }).sort({ due:1 }).limit(10).lean());
+    if (Assignment) promises.push(Assignment.find({ classId: user.class }).sort({ due: 1 }).limit(10).lean());
     else promises.push(Promise.resolve([]));
-    if (Invoice) promises.push(Invoice.find({ studentId: user.id }).sort({ due:1 }).limit(10).lean());
+    if (Invoice) promises.push(Invoice.find({ studentId: user.id }).sort({ due: 1 }).limit(10).lean());
     else promises.push(Promise.resolve([]));
-    if (AiQuiz) promises.push(AiQuiz.find({ createdBy: user.id }).sort({ createdAt:-1 }).limit(10).lean());
+    if (AiQuiz) promises.push(AiQuiz.find({ createdBy: user.id }).sort({ createdAt: -1 }).limit(10).lean());
     else promises.push(Promise.resolve([]));
 
     const [exams, assignments, invoices, aiquizzes] = await Promise.all(promises);
@@ -35,7 +35,10 @@ router.get('/me', authenticateJWT, async (req, res) => {
       invoices,
       aiquizzes
     });
-  } catch (err) { console.error(err); res.status(500).json({ ok:false, message:'Server error' }); }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
 });
 
-module.exports = router;
+export default router;
