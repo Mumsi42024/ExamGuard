@@ -1,3 +1,5 @@
+'use strict';
+
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -7,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
 import Application from '../models/Application.js';
+import User from '../models/User.js';
 import { authenticateJWT } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -47,7 +50,7 @@ const cpUpload = upload.fields([
   { name: 'transcripts', maxCount: 10 }
 ]);
 
-// map multer file to small descriptor
+// Helper to map multer file objects to small file descriptors
 function mapFile(f) {
   return {
     filename: f.filename,
@@ -63,7 +66,7 @@ function safeApplication(appDoc) {
   const a = typeof appDoc.toObject === 'function' ? appDoc.toObject() : appDoc;
   return {
     id: a._id && String(a._id),
-    _id: a._id && String(a._id),
+    _id: a._0 && String(a._id),
     username: a.username,
     firstName: a.firstName,
     lastName: a.lastName,
@@ -91,27 +94,35 @@ function safeApplication(appDoc) {
   };
 }
 
-// Helper to resolve a student/application by id or username
+// Helper to resolve a user (student) by id or username, prefer User model then fall back to Application
 async function findStudentByIdOrUsername(idOrUsername) {
   if (!idOrUsername) return null;
-  // try as ObjectId
-  if (mongoose.Types.ObjectId.isValid(idOrUsername)) {
-    const byId = await Application.findById(idOrUsername).lean().exec().catch(() => null);
-    if (byId) return byId;
-    const byStudent = await mongoose.models.Student ? mongoose.models.Student.findById(idOrUsername).lean().exec().catch(() => null) : null;
-    if (byStudent) return byStudent;
+
+  // Prefer User model (your existing model) when resolving
+  try {
+    if (mongoose.Types.ObjectId.isValid(idOrUsername)) {
+      const u = await User.findById(idOrUsername).lean().exec().catch(() => null);
+      if (u) return u;
+      const appById = await Application.findById(idOrUsername).lean().exec().catch(() => null);
+      if (appById) return appById;
+    }
+
+    // try username on User
+    const uName = await User.findOne({ username: idOrUsername }).lean().exec().catch(() => null);
+    if (uName) return uName;
+
+    // fallback: Application username
+    const appByUsername = await Application.findOne({ username: idOrUsername }).lean().exec().catch(() => null);
+    if (appByUsername) return appByUsername;
+  } catch (e) {
+    // ignore and return null
+    console.warn('findStudentByIdOrUsername error', e && e.message);
   }
-  // try username
-  const byUsername = await Application.findOne({ username: idOrUsername }).lean().exec().catch(() => null);
-  if (byUsername) return byUsername;
-  const byStudentUsername = await (mongoose.models.Student ? mongoose.models.Student.findOne({ username: idOrUsername }).lean().exec().catch(() => null) : null);
-  if (byStudentUsername) return byStudentUsername;
   return null;
 }
 
 /* -----------------------
    Basic application endpoints
-   (existing handlers)
    ----------------------- */
 
 // POST /api/application  — accepts multipart/form-data
@@ -125,7 +136,7 @@ router.post('/', cpUpload, async (req, res) => {
       }
     }
 
-    const existing = await Application.findOne({ username: body.username }).lean();
+    const existing = await Application.findOne({ username: body.username }).lean().exec();
     if (existing) return res.status(409).json({ ok: false, message: 'Username already in use' });
 
     const saltRounds = Number(process.env.PW_SALT_ROUNDS) || 10;
@@ -145,20 +156,16 @@ router.post('/', cpUpload, async (req, res) => {
       phone: body.phone,
       nationality: body.nationality,
       address: body.address,
-
       intakeTerm: body.intakeTerm || body['intake-term'] || undefined,
       program: body.program,
       currentSchool: body.currentSchool || body['current-school'],
       currentGrade: body.currentGrade || body['current-grade'],
       prevAcademics: body.prevAcademics || body['prev-academics'],
-
       idFiles,
       transcripts,
       languageProof: body.languageProof || body['language-proof'],
-
       emergencyName: body.emergencyName || body['emergency-name'],
       emergencyPhone: body.emergencyPhone || body['emergency-phone'],
-
       agree: body.agree === '1' || body.agree === 'true' || body.agree === 'on',
       status: 'submitted',
       sourceIp: req.ip
@@ -188,7 +195,7 @@ router.post('/login', async (req, res) => {
 
     const app = await Application.findOne({
       $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }]
-    });
+    }).exec();
 
     if (!app) {
       return res.status(401).json({ ok: false, message: 'Invalid credentials' });
@@ -221,9 +228,9 @@ router.get('/me', authenticateJWT, async (req, res) => {
 
     let app = null;
     if (Application && Application.findById && (id.match && id.match(/^[0-9a-fA-F]{24}$/))) {
-      app = await Application.findById(id).lean();
+      app = await Application.findById(id).lean().exec();
     }
-    if (!app) app = await Application.findOne({ username: id }).lean();
+    if (!app) app = await Application.findOne({ username: id }).lean().exec();
 
     if (!app) return res.status(404).json({ ok: false, message: 'Not found' });
 
@@ -244,7 +251,7 @@ router.put('/:id', upload.single('profilePic'), authenticateJWT, async (req, res
     const tokenOwnerId = user.id || user._id || user.sub || user.username;
     if (!tokenOwnerId) return res.status(401).json({ ok: false, message: 'Invalid token' });
 
-    // verify ownership (resolve target)
+    // Find application record
     let app = null;
     if (mongoose.Types.ObjectId.isValid(idOrUsername)) {
       app = await Application.findById(idOrUsername);
@@ -330,7 +337,7 @@ router.put('/:id/password', authenticateJWT, async (req, res) => {
     console.error('application password change error', err);
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
-}
+});
 
 // GET /api/application/:id  — get profile (no auth required)
 router.get('/:id', async (req, res) => {
@@ -338,9 +345,9 @@ router.get('/:id', async (req, res) => {
     const id = req.params.id;
     let app = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
-      app = await Application.findById(id).select('-passwordHash').lean();
+      app = await Application.findById(id).select('-passwordHash').lean().exec();
     }
-    if (!app) app = await Application.findOne({ username: id }).select('-passwordHash').lean();
+    if (!app) app = await Application.findOne({ username: id }).select('-passwordHash').lean().exec();
     if (!app) return res.status(404).json({ ok: false, message: 'Not found' });
     res.json({ ok: true, application: safeApplication(app) });
   } catch (err) {
@@ -351,11 +358,10 @@ router.get('/:id', async (req, res) => {
 
 /* -----------------------
    Student-facing endpoints used by the frontend
-   Paths added to match calls from student.html
    ----------------------- */
 
 // Try to reuse models if present; otherwise handlers return empty arrays
-const StudentModel = mongoose.models.Student || null;
+const UserModel = mongoose.models.User || User;
 const CourseModel = mongoose.models.Course || null;
 const AssignmentModel = mongoose.models.Assignment || null;
 const GradeModel = mongoose.models.Grade || null;
@@ -371,7 +377,6 @@ router.get('/student/overview', async (req, res) => {
 
     const student = await findStudentByIdOrUsername(studentId);
 
-    // Counts and simple aggregates (use models if exist)
     const [coursesCount, assignmentsCount, unreadMessages] = await Promise.all([
       CourseModel ? CourseModel.countDocuments({ $or: [{ studentId }, { students: student ? student._id : undefined }] }).catch(() => 0) : 0,
       AssignmentModel ? AssignmentModel.countDocuments({ $or: [{ studentId }, { assignees: student ? student._id : undefined }] }).catch(() => 0) : 0,
@@ -383,7 +388,6 @@ router.get('/student/overview', async (req, res) => {
       coursesCount: Number(coursesCount || 0),
       assignmentsCount: Number(assignmentsCount || 0),
       unreadMessages: Number(unreadMessages || 0),
-      // provide a small "upcoming" placeholder for UI
       upcoming: []
     };
 
@@ -470,7 +474,6 @@ router.get('/resources', async (req, res) => {
     const l = Math.min(500, Number(limit) || 100);
     const o = Math.max(0, Number(offset) || 0);
 
-    // basic search/permission: if Resource model exists, query it; otherwise return empty list
     let docs = [];
     if (ResourceModel) {
       const qobj = {};
@@ -478,7 +481,6 @@ router.get('/resources', async (req, res) => {
         const re = new RegExp(String(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
         qobj.$or = [{ title: re }, { desc: re }, { tags: re }];
       }
-      // if studentId provided, we can further filter by audience if model has such field
       if (studentId) {
         qobj.$or = qobj.$or ? qobj.$or.concat([{ studentId }, { students: studentId }]) : [{ studentId }, { students: studentId }];
       }
@@ -498,10 +500,8 @@ router.get('/messages/conversations', async (req, res) => {
     const { user } = req.query;
     if (!user) return res.status(400).json({ ok: false, message: 'user is required' });
 
-    // If Message model exists, try to fetch conversation summaries; otherwise return empty
     let convos = [];
     if (MessageModel) {
-      // Assume Message model stores conversations separately or has participantIds; this is a best-effort query.
       convos = await MessageModel.aggregate([
         { $match: { $or: [{ to: user }, { from: user }, { participantIds: user }] } },
         {
@@ -515,7 +515,6 @@ router.get('/messages/conversations', async (req, res) => {
         { $sort: { lastMessage: -1 } },
         { $limit: 200 }
       ]).catch(async () => {
-        // fallback: find messages and map threads
         const msgs = await MessageModel.find({ $or: [{ to: user }, { from: user }, { participantIds: user }] }).sort({ createdAt: -1 }).lean().exec().catch(() => []);
         const map = new Map();
         msgs.forEach(m => {
