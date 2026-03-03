@@ -20,7 +20,8 @@ router.get('/me', authenticateJWT, async (req, res) => {
     else promises.push(Promise.resolve([]));
     if (Assignment) promises.push(Assignment.find({ classId: user.class }).sort({ due: 1 }).limit(10).lean());
     else promises.push(Promise.resolve([]));
-    if (Invoice) promises.push(Invoice.find({ studentId: user.id }).sort({ due: 1 }).limit(10).lean());
+    // INVOICES: all of this student's invoices
+    if (Invoice) promises.push(Invoice.find({ studentId: user.id }).sort({ due: 1 }).lean());
     else promises.push(Promise.resolve([]));
     if (AiQuiz) promises.push(AiQuiz.find({ createdBy: user.id }).sort({ createdAt: -1 }).limit(10).lean());
     else promises.push(Promise.resolve([]));
