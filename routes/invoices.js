@@ -40,12 +40,20 @@ router.post('/', authenticateJWT, requireRole('admin','staff'), async (req, res)
   }
 });
 
-// List invoices - student sees own, admin sees all
+// List invoices - supports studentId, student, mine=true, status
 router.get('/', authenticateJWT, async (req, res) => {
   try {
     const q = {};
-    if (req.user.role === 'student') q.studentId = req.user.id;
+    // Query by studentId or student
+    if (req.query.studentId) q.studentId = req.query.studentId;
+    if (req.query.student) q.studentId = req.query.student;
+    // If mine=true and user is student, use JWT
+    if (req.query.mine === 'true' && req.user.role === 'student') q.studentId = req.user.id;
+    // If no student specified, student sees own
+    if (!q.studentId && req.user.role === 'student') q.studentId = req.user.id;
+    // Filter by status if provided
     if (req.query.status) q.status = req.query.status;
+
     const invoices = await Invoice.find(q).sort({ due: 1 }).lean();
     res.json({ ok: true, invoices });
   } catch (err) {
