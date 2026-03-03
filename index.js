@@ -137,6 +137,17 @@ app.use('/api/auth', authLimiter, authRouter);
 // mount application route (multipart handling done in router)
 app.use('/api/application', applicationRouter);
 
+// Mount other routers (ensure these are registered BEFORE the 404 handler)
+app.use('/api/exams', examsRouter);
+app.use('/api/ai', aiRouter);
+app.use('/api/submissions', submissionsRouter);
+app.use('/api/invoices', invoicesRouter);
+app.use('/api/resources', resourcesRouter);
+app.use('/api/messages', messagesRouter);
+app.use('/api/assignments', assignmentsRouter);
+app.use('/api/students', studentsRouter);
+app.use('/api/results', resultsRouter);
+
 // --- Example simple admin endpoints (optional quick info) ---
 app.get('/api/info', (req, res) => {
   res.json({
@@ -154,15 +165,6 @@ app.use((req, res, next) => {
 
 // --- Error handler (JSON) ---
 /* eslint-disable no-unused-vars */
-app.use('/api/exams', examsRouter);
-app.use('/api/ai', aiRouter);
-app.use('/api/submissions', submissionsRouter);
-app.use('/api/invoices', invoicesRouter);
-app.use('/api/resources', resourcesRouter);
-app.use('/api/messages', messagesRouter);
-app.use('/api/assignments', assignmentsRouter);
-app.use('/api/students', studentsRouter);
-app.use('/api/results', resultsRouter);
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err && err.stack ? err.stack : err);
   const status = err.status || 500;
