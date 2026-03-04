@@ -359,14 +359,15 @@ router.get('/:id', async (req, res) => {
 /* -----------------------
    Student-facing endpoints used by the frontend
    ----------------------- */
-
-// Try to reuse models if present; otherwise handlers return empty arrays
+// --- Replace the existing "Try to reuse models..." block with this improved version ---
 const UserModel = mongoose.models.User || User;
 const CourseModel = mongoose.models.Course || null;
 const AssignmentModel = mongoose.models.Assignment || null;
 const GradeModel = mongoose.models.Grade || null;
 const TimetableModel = mongoose.models.Timetable || null;
-const ResourceModel = mongoose.models.Resource || null;
+
+// Try a few likely model names for resources, leave null if not registered
+const ResourceModel = mongoose.models.Resource || mongoose.models.Resources || mongoose.models.ResourceModel || null;
 const MessageModel = mongoose.models.Message || null;
 
 // GET /api/application/student/overview?studentId=...
@@ -467,7 +468,7 @@ router.get('/student/assignments', async (req, res) => {
   }
 });
 
-// GET /api/application/resources?studentId=...
+// --- Replace the GET /api/application/resources handler body with this version ---
 router.get('/resources', async (req, res) => {
   try {
     const { studentId, q, limit = 100, offset = 0 } = req.query;
@@ -476,15 +477,25 @@ router.get('/resources', async (req, res) => {
 
     let docs = [];
     if (ResourceModel) {
-      const qobj = {};
+      // Build query: if both q and studentId are present, require BOTH (use $and).
+      // If only one is present, use that clause. If none, find all ({}).
+      const clauses = [];
+
       if (q) {
         const re = new RegExp(String(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        qobj.$or = [{ title: re }, { desc: re }, { tags: re }];
+        clauses.push({ $or: [{ title: re }, { desc: re }, { tags: re }] });
       }
+
       if (studentId) {
-        qobj.$or = qobj.$or ? qobj.$or.concat([{ studentId }, { students: studentId }]) : [{ studentId }, { students: studentId }];
+        clauses.push({ $or: [{ studentId }, { students: studentId }] });
       }
-      docs = await ResourceModel.find(qobj).skip(o).limit(l).lean().exec().catch(() => []);
+
+      const findQuery = clauses.length === 0 ? {} : (clauses.length === 1 ? clauses[0] : { $and: clauses });
+
+      docs = await ResourceModel.find(findQuery).skip(o).limit(l).lean().exec().catch(() => []);
+    } else {
+      // Optional: log when ResourceModel isn't registered, to help debugging
+      console.warn('ResourceModel not found on mongoose.models; resources endpoint will return empty array');
     }
 
     return res.json({ ok: true, resources: docs || [] });
