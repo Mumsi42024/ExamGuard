@@ -155,7 +155,50 @@ router.get('/students', async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
+// -- Insert this handler into routes/admin.js (near other /admin/staffs handlers) --
+router.put('/staffs/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const body = req.body || {};
 
+    // Whitelist fields we allow clients to update
+    const allowed = ['firstName','lastName','email','department','dept','status','role','classAssigned','classId','subjects','profile','username','description'];
+    const update = {};
+
+    for (const k of allowed) {
+      if (Object.prototype.hasOwnProperty.call(body, k)) update[k] = body[k];
+    }
+
+    // Support password change (hash before storing)
+    if (body.password) {
+      const saltRounds = Number(process.env.PW_SALT_ROUNDS) || 10;
+      try {
+        update.passwordHash = await bcrypt.hash(String(body.password), saltRounds);
+      } catch (e) {
+        console.warn('password hash failed', e && e.message);
+      }
+    }
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ ok: false, message: 'No updatable fields provided' });
+    }
+
+    let updated = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      updated = await User.findByIdAndUpdate(id, update, { new: true }).lean().exec().catch(() => null);
+    }
+    if (!updated) {
+      updated = await User.findOneAndUpdate({ username: id }, update, { new: true }).lean().exec().catch(() => null);
+    }
+    if (!updated) return res.status(404).json({ ok: false, message: 'Not found' });
+
+    await audit('update-staff', req.user?.username || 'anonymous', { id, update });
+    return res.json({ ok: true, data: updated });
+  } catch (err) {
+    console.error('PUT /admin/staffs/:id error', err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
 // GET /admin/students/:id
 router.get('/students/:id', async (req, res) => {
   try {
