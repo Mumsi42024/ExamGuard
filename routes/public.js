@@ -113,7 +113,7 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
   });
 
   // Create
-  router.post(pathBase, requireAdmin, async (req, res) => {
+  router.post(pathBase, async (req, res) => {
     try {
       let Model = mongoose.models[modelName] || null;
       if (!Model) Model = await ensureModelLoaded(modelName);
@@ -228,7 +228,7 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
   });
 
   // Update
-  router.put(`${pathBase}/:id`, requireAdmin, async (req, res) => {
+  router.put(`${pathBase}/:id`, async (req, res) => {
     try {
       let Model = mongoose.models[modelName] || null;
       if (!Model) Model = await ensureModelLoaded(modelName);
@@ -321,7 +321,7 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
   });
 
   // Delete
-  router.delete(`${pathBase}/:id`, requireAdmin, async (req, res) => {
+  router.delete(`${pathBase}/:id`, async (req, res) => {
     try {
       let Model = mongoose.models[modelName] || null;
       if (!Model) Model = await ensureModelLoaded(modelName);
