@@ -4,18 +4,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Application from '../models/Application.js';
 import User from '../models/User.js';
-import { authenticateJWT } from '../middleware/auth.js';
 
 const router = express.Router();
-
-// helper: require admin role
-function requireAdmin(req, res, next) {
-  const user = req.user;
-  if (!user) return res.status(401).json({ ok: false, message: 'Unauthenticated' });
-  const role = user.role || user.roles || (user.isAdmin ? 'admin' : undefined) || user.type;
-  if (role === 'admin' || (Array.isArray(user.roles) && user.roles.includes('admin')) || user.isAdmin) return next();
-  return res.status(403).json({ ok: false, message: 'Forbidden: admin only' });
-}
 
 // utility to build case-insensitive regex safely
 function safeRegex(q) {
@@ -90,7 +80,7 @@ function toCSV(items, columns) {
 }
 
 /* ---------------------------
-   Students endpoints
+   Students endpoints (OPEN access for now)
    GET  /admin/students?q=&status=&program=&class=
    GET  /admin/students/:id
    PUT  /admin/students/:id/status  (body: { status })
@@ -98,7 +88,7 @@ function toCSV(items, columns) {
    --------------------------- */
 
 // GET /admin/students
-router.get('/students', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/students', async (req, res) => {
   try {
     const { q, status, program, class: className, limit = 200, offset = 0 } = req.query;
     const l = Math.min(2000, Number(limit) || 200);
@@ -130,7 +120,7 @@ router.get('/students', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/students/:id
-router.get('/students/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/students/:id', async (req, res) => {
   try {
     const id = req.params.id;
     let doc = null;
@@ -147,7 +137,7 @@ router.get('/students/:id', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // PUT /admin/students/:id/status
-router.put('/students/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/students/:id/status', async (req, res) => {
   try {
     const id = req.params.id;
     const { status } = req.body || {};
@@ -171,7 +161,7 @@ router.put('/students/:id/status', authenticateJWT, requireAdmin, async (req, re
 });
 
 // POST /admin/students/export
-router.post('/students/export', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/students/export', async (req, res) => {
   try {
     const { q, status, program, class: className } = req.body || req.query || {};
     const query = buildStudentQuery({ q, status, program, className });
@@ -191,7 +181,7 @@ router.post('/students/export', authenticateJWT, requireAdmin, async (req, res) 
 });
 
 /* ---------------------------
-   Staffs endpoints
+   Staffs endpoints (OPEN access for now)
    GET  /admin/staffs?q=&role=&dept=&status=
    GET  /admin/staffs/:id
    PUT  /admin/staffs/:id/role (body: { role })
@@ -200,7 +190,7 @@ router.post('/students/export', authenticateJWT, requireAdmin, async (req, res) 
    --------------------------- */
 
 // GET /admin/staffs
-router.get('/staffs', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/staffs', async (req, res) => {
   try {
     const { q, role, dept, status, limit = 200, offset = 0 } = req.query;
     const l = Math.min(2000, Number(limit) || 200);
@@ -217,7 +207,7 @@ router.get('/staffs', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/staffs/:id
-router.get('/staffs/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/staffs/:id', async (req, res) => {
   try {
     const id = req.params.id;
     let doc = null;
@@ -232,7 +222,7 @@ router.get('/staffs/:id', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // PUT /admin/staffs/:id/role
-router.put('/staffs/:id/role', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/staffs/:id/role', async (req, res) => {
   try {
     const id = req.params.id;
     const { role } = req.body || {};
@@ -250,7 +240,7 @@ router.put('/staffs/:id/role', authenticateJWT, requireAdmin, async (req, res) =
 });
 
 // PUT /admin/staffs/:id/status
-router.put('/staffs/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/staffs/:id/status', async (req, res) => {
   try {
     const id = req.params.id;
     const { status } = req.body || {};
@@ -268,7 +258,7 @@ router.put('/staffs/:id/status', authenticateJWT, requireAdmin, async (req, res)
 });
 
 // POST /admin/staffs/export
-router.post('/staffs/export', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/staffs/export', async (req, res) => {
   try {
     const { q, role, dept, status } = req.body || req.query || {};
     const query = buildStaffQuery({ q, role, dept, status });
