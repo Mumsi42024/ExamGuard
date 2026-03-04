@@ -146,6 +146,33 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
         }
       }
 
+      // Sync: if created User (staff/teacher) with classAssigned, set Class.teacherId
+      if (modelName === 'User') {
+        try {
+          // only sync for teacher role (safe-guard)
+          if (doc.role === 'teacher') {
+            if (doc.classAssigned) {
+              await mongoose.models.Class.findByIdAndUpdate(
+                doc.classAssigned,
+                { $set: { teacherId: doc._id } }
+              ).exec().catch(() => {});
+              await mongoose.models.User.findByIdAndUpdate(
+                doc._id,
+                { $addToSet: { classAssignedMany: doc.classAssigned } }
+              ).exec().catch(() => {});
+            }
+            if (Array.isArray(doc.classAssignedMany) && doc.classAssignedMany.length) {
+              await mongoose.models.Class.updateMany(
+                { _id: { $in: doc.classAssignedMany } },
+                { $set: { teacherId: doc._id } }
+              ).exec().catch(() => {});
+            }
+          }
+        } catch (e) {
+          console.warn('sync user->class (create) failed', e && e.message);
+        }
+      }
+
       await audit(`create:${collectionName}`, req.user?.username || 'system', { id: doc._id });
       return res.status(201).json({ ok: true, data: doc });
     } catch (err) {
@@ -260,6 +287,27 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
           }
         } catch (e) {
           console.warn('sync class->user (update) failed', e && e.message);
+        }
+      }
+
+      // If the updated model is a User, keep Class.teacherId in sync with user.classAssigned
+      if (modelName === 'User') {
+        try {
+          const prevClass = existing && existing.classAssigned ? String(existing.classAssigned) : null;
+          const newClass = doc && doc.classAssigned ? String(doc.classAssigned) : null;
+          if (prevClass !== newClass) {
+            if (prevClass) {
+              await mongoose.models.Class.findByIdAndUpdate(prevClass, { $unset: { teacherId: "" } }).exec().catch(() => {});
+              await mongoose.models.User.findByIdAndUpdate(doc._id, { $pull: { classAssignedMany: prevClass } }).exec().catch(() => {});
+            }
+            if (newClass) {
+              await mongoose.models.Class.findByIdAndUpdate(newClass, { $set: { teacherId: doc._id } }).exec().catch(() => {});
+              await mongoose.models.User.findByIdAndUpdate(doc._id, { $addToSet: { classAssignedMany: newClass } }).exec().catch(() => {});
+            }
+          }
+          // Note: we do not attempt full reconciliation of classAssignedMany here.
+        } catch (e) {
+          console.warn('sync user->class (update) failed', e && e.message);
         }
       }
 
