@@ -17,7 +17,14 @@ import xss from 'xss-clean';
 import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
-
+import './models/Class.js';
+import './models/Course.js';
+import './models/Subject.js';
+import './models/Assignment.js';
+import './models/Message.js';
+import './models/Resource.js';
+import './models/User.js';
+import './models/Application.js';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
