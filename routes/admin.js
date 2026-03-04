@@ -155,50 +155,7 @@ router.get('/students', async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
-// -- Insert this handler into routes/admin.js (near other /admin/staffs handlers) --
-router.put('/staffs/:id', async (req, res) => {
-  try {
-    const id = req.params.id;
-    const body = req.body || {};
 
-    // Whitelist fields we allow clients to update
-    const allowed = ['firstName','lastName','email','department','dept','status','role','classAssigned','classId','subjects','profile','username','description'];
-    const update = {};
-
-    for (const k of allowed) {
-      if (Object.prototype.hasOwnProperty.call(body, k)) update[k] = body[k];
-    }
-
-    // Support password change (hash before storing)
-    if (body.password) {
-      const saltRounds = Number(process.env.PW_SALT_ROUNDS) || 10;
-      try {
-        update.passwordHash = await bcrypt.hash(String(body.password), saltRounds);
-      } catch (e) {
-        console.warn('password hash failed', e && e.message);
-      }
-    }
-
-    if (Object.keys(update).length === 0) {
-      return res.status(400).json({ ok: false, message: 'No updatable fields provided' });
-    }
-
-    let updated = null;
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      updated = await User.findByIdAndUpdate(id, update, { new: true }).lean().exec().catch(() => null);
-    }
-    if (!updated) {
-      updated = await User.findOneAndUpdate({ username: id }, update, { new: true }).lean().exec().catch(() => null);
-    }
-    if (!updated) return res.status(404).json({ ok: false, message: 'Not found' });
-
-    await audit('update-staff', req.user?.username || 'anonymous', { id, update });
-    return res.json({ ok: true, data: updated });
-  } catch (err) {
-    console.error('PUT /admin/staffs/:id error', err);
-    return res.status(500).json({ ok: false, message: 'Server error' });
-  }
-});
 // GET /admin/students/:id
 router.get('/students/:id', async (req, res) => {
   try {
@@ -338,8 +295,10 @@ router.get('/staffs/:id', async (req, res) => {
   try {
     const id = req.params.id;
     let doc = null;
-    if (mongoose.Types.ObjectId.isValid(id)) doc = await User.findById(id).lean().exec().catch(() => null);
-    if (!doc) doc = await User.findOne({ username: id }).lean().exec().catch(() => null);
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      doc = await User.findById(id).populate('classAssigned', 'name term').populate('classAssignedMany', 'name term').lean().exec().catch(() => null);
+    }
+    if (!doc) doc = await User.findOne({ username: id }).populate('classAssigned', 'name term').populate('classAssignedMany', 'name term').lean().exec().catch(() => null);
     if (!doc) return res.status(404).json({ ok: false, message: 'Not found' });
     return res.json({ ok: true, data: doc });
   } catch (err) {
@@ -377,7 +336,25 @@ router.post('/staffs', async (req, res) => {
       profile: body.profile || {}
     });
 
+    // handle optional classAssigned on creation
+    if (body.classAssigned) doc.classAssigned = body.classAssigned;
+    if (body.classAssignedMany && Array.isArray(body.classAssignedMany)) doc.classAssignedMany = body.classAssignedMany;
+
     await doc.save();
+
+    // Sync: if created with classAssigned, set Class.teacherId
+    try {
+      if (doc.classAssigned) {
+        await mongoose.models.Class.findByIdAndUpdate(doc.classAssigned, { teacherId: doc._id }).exec().catch(() => {});
+        await mongoose.models.User.findByIdAndUpdate(doc._id, { $addToSet: { classAssignedMany: doc.classAssigned } }).exec().catch(() => {});
+      }
+      if (Array.isArray(doc.classAssignedMany) && doc.classAssignedMany.length) {
+        await mongoose.models.Class.updateMany({ _id: { $in: doc.classAssignedMany } }, { $set: { teacherId: doc._id } }).exec().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('sync user->class (create) failed', e && e.message);
+    }
+
     const out = { ...doc.toObject() };
     delete out.passwordHash;
     await audit('create-staff', body.username || 'unknown', { id: out._id, role: body.role });
@@ -404,6 +381,70 @@ router.put('/staffs/:id/role', async (req, res) => {
     return res.json({ ok: true, data: updated });
   } catch (err) {
     console.error('PUT /admin/staffs/:id/role error', err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+// Generic staff update with class sync
+router.put('/staffs/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const body = req.body || {};
+    const allowed = ['firstName','lastName','email','department','dept','status','role','classAssigned','classAssignedMany','subjects','profile','username','title','bio'];
+    const update = {};
+    for (const k of allowed) {
+      if (Object.prototype.hasOwnProperty.call(body, k)) update[k] = body[k];
+    }
+
+    // handle password change
+    if (body.password) {
+      const saltRounds = Number(process.env.PW_SALT_ROUNDS) || 10;
+      update.passwordHash = await bcrypt.hash(String(body.password), saltRounds);
+    }
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ ok: false, message: 'No updatable fields provided' });
+    }
+
+    // find existing user (by id or username)
+    let existing = null;
+    if (mongoose.Types.ObjectId.isValid(id)) existing = await User.findById(id).lean().exec().catch(()=>null);
+    if (!existing) existing = await User.findOne({ username: id }).lean().exec().catch(()=>null);
+    if (!existing) return res.status(404).json({ ok:false, message:'Not found' });
+
+    // apply update
+    let updated = null;
+    if (mongoose.Types.ObjectId.isValid(existing._id)) {
+      updated = await User.findByIdAndUpdate(existing._id, update, { new: true }).lean().exec().catch(()=>null);
+    } else {
+      updated = await User.findOneAndUpdate({ username: id }, update, { new: true }).lean().exec().catch(()=>null);
+    }
+    if (!updated) return res.status(500).json({ ok:false, message:'Update failed' });
+
+    // If classAssigned changed, reflect on Class.teacherId and user.classAssignedMany
+    try {
+      const prevClass = existing.classAssigned ? String(existing.classAssigned) : null;
+      const newClass = updated.classAssigned ? String(updated.classAssigned) : null;
+      if (prevClass !== newClass) {
+        if (prevClass) {
+          await mongoose.models.Class.findByIdAndUpdate(prevClass, { $unset: { teacherId: "" } }).exec().catch(()=>{});
+          await mongoose.models.User.findByIdAndUpdate(updated._id, { $pull: { classAssignedMany: prevClass } }).exec().catch(()=>{});
+        }
+        if (newClass) {
+          await mongoose.models.Class.findByIdAndUpdate(newClass, { teacherId: updated._id }).exec().catch(()=>{});
+          await mongoose.models.User.findByIdAndUpdate(updated._id, { $addToSet: { classAssignedMany: newClass } }).exec().catch(()=>{});
+        }
+      }
+
+      // If classAssignedMany changed, we won't attempt full reconciliation here, caller should manage.
+    } catch (e) {
+      console.warn('sync user->class (staff update) failed', e && e.message);
+    }
+
+    await audit('update-staff', req.user?.username || 'anonymous', { id: updated._id, update });
+    return res.json({ ok: true, data: updated });
+  } catch (err) {
+    console.error('PUT /admin/staffs/:id error', err);
     return res.status(500).json({ ok: false, message: 'Server error' });
   }
 });
