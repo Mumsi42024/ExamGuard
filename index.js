@@ -45,6 +45,8 @@ import assignmentsRouter from './routes/assignments.js';
 import studentsRouter from './routes/students.js';
 import resultsRouter from './routes/results.js';
 import adminRouter from './routes/admin.js';
+import publicRouter from './routes/public.js';
+
 
 // create directories if needed
 fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -108,6 +110,8 @@ app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d' }));
 app.use('/api/admin', adminRouter);
 // --- Health & readiness ---
+// Mount permissive public endpoints for admin UI (must come before more strict routers)
+app.use('/api', publicRouter);
 app.get('/healthz', (req, res) => res.status(200).json({ ok: true, uptime: process.uptime() }));
 app.get('/ready', (req, res) => {
   const ready = mongoose.connection.readyState === 1; // 1 = connected
