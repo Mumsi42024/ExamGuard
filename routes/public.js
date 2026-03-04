@@ -94,7 +94,7 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
   });
 
   // Create
-  router.post(pathBase, requireAdmin, async (req, res) => {
+  router.post(pathBase, async (req, res) => {
     try {
       if (!Model) return res.status(404).json({ ok: false, message: `${modelName} model not found` });
       const body = req.body || {};
@@ -133,7 +133,7 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
   });
 
   // Update
-  router.put(`${pathBase}/:id`, requireAdmin, async (req, res) => {
+  router.put(`${pathBase}/:id`, async (req, res) => {
     try {
       if (!Model) return res.status(404).json({ ok: false, message: `${modelName} model not found` });
       const id = req.params.id;
@@ -161,7 +161,7 @@ function mountCrudFor({ modelName, collectionName, allowedCreate = [], allowedUp
   });
 
   // Delete
-  router.delete(`${pathBase}/:id`, requireAdmin, async (req, res) => {
+  router.delete(`${pathBase}/:id`, async (req, res) => {
     try {
       if (!Model) return res.status(404).json({ ok: false, message: `${modelName} model not found` });
       const id = req.params.id;
