@@ -339,22 +339,7 @@ router.put('/:id/password', authenticateJWT, async (req, res) => {
   }
 });
 
-// GET /api/application/:id  — get profile (no auth required)
-router.get('/:id', async (req, res) => {
-  try {
-    const id = req.params.id;
-    let app = null;
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      app = await Application.findById(id).select('-passwordHash').lean().exec();
-    }
-    if (!app) app = await Application.findOne({ username: id }).select('-passwordHash').lean().exec();
-    if (!app) return res.status(404).json({ ok: false, message: 'Not found' });
-    res.json({ ok: true, application: safeApplication(app) });
-  } catch (err) {
-    console.error('application GET error', err);
-    res.status(500).json({ ok: false, message: 'Server error' });
-  }
-});
+
 
 /* -----------------------
    Student-facing endpoints used by the frontend
@@ -542,5 +527,20 @@ router.get('/messages/conversations', async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Failed to fetch conversations' });
   }
 });
-
+// GET /api/application/:id  — get profile (no auth required)
+router.get('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    let app = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      app = await Application.findById(id).select('-passwordHash').lean().exec();
+    }
+    if (!app) app = await Application.findOne({ username: id }).select('-passwordHash').lean().exec();
+    if (!app) return res.status(404).json({ ok: false, message: 'Not found' });
+    res.json({ ok: true, application: safeApplication(app) });
+  } catch (err) {
+    console.error('application GET error', err);
+    res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
 export default router;
