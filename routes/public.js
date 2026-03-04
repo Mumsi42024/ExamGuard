@@ -26,7 +26,18 @@ function parseLimitOffset(req, { defLimit = 100, maxLimit = 2000 } = {}) {
   if (!Number.isFinite(offset) || offset < 0) offset = 0;
   return { limit, offset };
 }
-
+// inside mountCrudFor (add helper)
+async function ensureModelLoaded(name) {
+  if (mongoose.models[name]) return mongoose.models[name];
+  try {
+    // dynamic import - allow relative path from project root
+    await import(path.join(process.cwd(), 'models', `${name}.js`));
+    return mongoose.models[name] || null;
+  } catch (e) {
+    console.warn('ensureModelLoaded failed for', name, e && e.message);
+    return null;
+  }
+}
 async function audit(action, actor = 'anonymous', meta = {}) {
   try {
     const file = path.join(LOG_DIR, 'public-api-actions.log');
