@@ -101,22 +101,6 @@ async function audit(action, actor = 'system', meta = {}) {
   }
 }
 
-/* ------------------------------------------------------------------
-   Public admin endpoints (NO authentication) - create/update/list/etc.
-   NOTE: These endpoints are intentionally left open per request.
-   In production you should re-introduce authentication and role checks.
-   ------------------------------------------------------------------ */
-
-/* ---------------------------
-   Students endpoints
-   GET  /admin/students?q=&status=&program=&class=&limit=&offset=
-   GET  /admin/students/:id
-   POST /admin/students         (create student)
-   PUT  /admin/students/:id/status  (body: { status })
-   POST /admin/students/export  (CSV)
-   --------------------------- */
-
-// GET /admin/students
 router.get('/students', async (req, res) => {
   try {
     const { q, status, program, class: className } = req.query;
@@ -127,31 +111,45 @@ router.get('/students', async (req, res) => {
 
     const query = buildStudentQuery({ q, status, program, className });
 
-    // Try User model first (prefer registered users)
-    let users = [];
-    let total = 0;
-    try {
-      const userQuery = { ...query };
-      if (!userQuery.role) userQuery.role = { $in: ['student', 'Student', 'learner'] };
-      [users, total] = await Promise.all([
-        User.find(userQuery).skip(offset).limit(limit).lean().exec().catch(() => []),
-        User.countDocuments(userQuery).catch(() => 0)
-      ]);
-    } catch (e) {
-      users = [];
-      total = 0;
+    // Build a user-specific query (we try to detect 'student' role entries where appropriate)
+    const userQuery = { ...query };
+    if (!userQuery.role) {
+      userQuery.role = { $in: ['student', 'Student', 'learner'] };
     }
 
-    // Fallback to Application collection
-    if ((!users || users.length === 0) && Application) {
-      const [apps, appsTotal] = await Promise.all([
-        Application.find(query).skip(offset).limit(limit).lean().exec().catch(() => []),
-        Application.countDocuments(query).catch(() => 0)
-      ]);
-      return res.json({ ok: true, data: apps, total: appsTotal, source: 'applications' });
-    }
+    // Query both collections in parallel (with the same limit/offset per collection).
+    // We'll merge and dedupe them below.
+    const [users, usersTotal, apps, appsTotal] = await Promise.all([
+      User.find(userQuery).skip(offset).limit(limit).lean().exec().catch(() => []),
+      User.countDocuments(userQuery).catch(() => 0),
+      Application.find(query).skip(offset).limit(limit).lean().exec().catch(() => []),
+      Application.countDocuments(query).catch(() => 0)
+    ]);
 
-    return res.json({ ok: true, data: users, total, source: 'users' });
+    // Merge & dedupe: prefer User entries when duplicates exist
+    const map = new Map();
+    const add = (list, source) => {
+      for (const it of list || []) {
+        // Dedup key: prefer _id, fallback to username or email
+        const key = it._id ? String(it._id) : (it.username ? `u:${String(it.username)}` : (it.email ? `e:${String(it.email)}` : JSON.stringify(it)));
+        if (!map.has(key)) {
+          // annotate source for debugging
+          map.set(key, { ...it, _source: source });
+        }
+      }
+    };
+    add(users, 'users');
+    add(apps, 'applications');
+
+    const combined = Array.from(map.values()).slice(0, limit);
+    const total = (Number(usersTotal) || 0) + (Number(appsTotal) || 0);
+
+    return res.json({
+      ok: true,
+      data: combined,
+      total,
+      counts: { users: Number(usersTotal) || 0, applications: Number(appsTotal) || 0 }
+    });
   } catch (err) {
     console.error('GET /admin/students error', err);
     return res.status(500).json({ ok: false, message: 'Server error' });
@@ -270,17 +268,6 @@ router.post('/students/export', async (req, res) => {
   }
 });
 
-/* ---------------------------
-   Staffs endpoints
-   GET  /admin/staffs?q=&role=&dept=&status=&limit=&offset=
-   GET  /admin/staffs/:id
-   POST /admin/staffs         (create staff)
-   PUT  /admin/staffs/:id/role  (body: { role })
-   PUT  /admin/staffs/:id/status (body: { status })
-   POST /admin/staffs/export (CSV)
-   --------------------------- */
-
-// GET /admin/staffs
 router.get('/staffs', async (req, res) => {
   try {
     const { q, role, dept, status } = req.query;
@@ -416,16 +403,7 @@ router.post('/staffs/export', async (req, res) => {
   }
 });
 
-/* ---------------------------
-   Additional admin helpers
-   - GET  /admin/health
-   - GET  /admin/applications?q=&status=&limit=&offset=
-   - GET  /admin/resources?q=&limit=&offset=
-   - POST /admin/backup
-   - GET  /admin/logs?lines=
-   --------------------------- */
 
-// Async directory size (walk)
 async function dirSize(dir) {
   let total = 0;
   try {
