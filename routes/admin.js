@@ -6,16 +6,15 @@ import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
+import bcrypt from 'bcryptjs';
 import Application from '../models/Application.js';
 import User from '../models/User.js';
-import { authenticateJWT } from '../middleware/auth.js';
 
 const router = express.Router();
 
 const LOG_DIR = process.env.LOG_DIR || path.join(process.cwd(), 'logs');
 const UPLOADS_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 const BACKUP_CMD = process.env.BACKUP_CMD || ''; // optional: command to run for backups
-const ADMIN_OPEN = process.env.ADMIN_OPEN === 'true'; // set to true only for testing
 
 // Utility: safe regex for search
 function safeRegex(q) {
@@ -102,28 +101,23 @@ async function audit(action, actor = 'system', meta = {}) {
   }
 }
 
-// Auth guard for production: require JWT + admin role unless ADMIN_OPEN=true
-function requireAdmin(req, res, next) {
-  if (ADMIN_OPEN) return next(); // open for testing if explicitly enabled via env
-  // authenticateJWT must be executed before this middleware; many routes include authenticateJWT explicitly
-  const user = req.user;
-  if (!user) return res.status(401).json({ ok: false, message: 'Unauthenticated' });
-  const roles = user.roles || (user.role ? [user.role] : []);
-  const isAdmin = user.isAdmin || roles.includes('admin') || roles.includes('administrator') || user.role === 'admin';
-  if (!isAdmin) return res.status(403).json({ ok: false, message: 'Forbidden: admin only' });
-  return next();
-}
+/* ------------------------------------------------------------------
+   Public admin endpoints (NO authentication) - create/update/list/etc.
+   NOTE: These endpoints are intentionally left open per request.
+   In production you should re-introduce authentication and role checks.
+   ------------------------------------------------------------------ */
 
 /* ---------------------------
-   Students endpoints (production-ready)
+   Students endpoints
    GET  /admin/students?q=&status=&program=&class=&limit=&offset=
    GET  /admin/students/:id
+   POST /admin/students         (create student)
    PUT  /admin/students/:id/status  (body: { status })
    POST /admin/students/export  (CSV)
    --------------------------- */
 
 // GET /admin/students
-router.get('/students', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/students', async (req, res) => {
   try {
     const { q, status, program, class: className } = req.query;
     let limit = Math.min(2000, Number(req.query.limit || 200));
@@ -133,12 +127,11 @@ router.get('/students', authenticateJWT, requireAdmin, async (req, res) => {
 
     const query = buildStudentQuery({ q, status, program, className });
 
-    // Try User model first
+    // Try User model first (prefer registered users)
     let users = [];
     let total = 0;
     try {
       const userQuery = { ...query };
-      // If there is no explicit role filter, prefer entries that look like students
       if (!userQuery.role) userQuery.role = { $in: ['student', 'Student', 'learner'] };
       [users, total] = await Promise.all([
         User.find(userQuery).skip(offset).limit(limit).lean().exec().catch(() => []),
@@ -149,7 +142,7 @@ router.get('/students', authenticateJWT, requireAdmin, async (req, res) => {
       total = 0;
     }
 
-    // If no users found, fallback to Application collection
+    // Fallback to Application collection
     if ((!users || users.length === 0) && Application) {
       const [apps, appsTotal] = await Promise.all([
         Application.find(query).skip(offset).limit(limit).lean().exec().catch(() => []),
@@ -166,7 +159,7 @@ router.get('/students', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/students/:id
-router.get('/students/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/students/:id', async (req, res) => {
   try {
     const id = req.params.id;
     let doc = null;
@@ -189,8 +182,49 @@ router.get('/students/:id', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
+// POST /admin/students  — create a new User (student)
+router.post('/students', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const required = ['username', 'password', 'firstName', 'lastName', 'email'];
+    for (const k of required) {
+      if (!body[k] || String(body[k]).trim() === '') {
+        return res.status(400).json({ ok: false, message: `${k} is required` });
+      }
+    }
+
+    const existing = await User.findOne({ $or: [{ username: body.username }, { email: body.email }] }).lean().exec();
+    if (existing) return res.status(409).json({ ok: false, message: 'username or email already in use' });
+
+    const saltRounds = Number(process.env.PW_SALT_ROUNDS) || 10;
+    const passwordHash = await bcrypt.hash(String(body.password), saltRounds);
+
+    const doc = new User({
+      username: body.username,
+      email: body.email,
+      passwordHash,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      program: body.program || body.course || null,
+      className: body.className || body.cohort || null,
+      status: body.status || 'active',
+      role: 'student',
+      profile: body.profile || {}
+    });
+
+    await doc.save();
+    const out = { ...doc.toObject() };
+    delete out.passwordHash;
+    await audit('create-student', body.username || 'unknown', { id: out._id });
+    return res.status(201).json({ ok: true, data: out });
+  } catch (err) {
+    console.error('POST /admin/students error', err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
 // PUT /admin/students/:id/status
-router.put('/students/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/students/:id/status', async (req, res) => {
   try {
     const id = req.params.id;
     const { status } = req.body || {};
@@ -207,7 +241,7 @@ router.put('/students/:id/status', authenticateJWT, requireAdmin, async (req, re
     }
     if (!updated) return res.status(404).json({ ok: false, message: 'Not found' });
 
-    await audit('update-student-status', req.user?.username || 'system', { id, status });
+    await audit('update-student-status', 'anonymous', { id, status });
     return res.json({ ok: true, data: updated });
   } catch (err) {
     console.error('PUT /admin/students/:id/status error', err);
@@ -216,7 +250,7 @@ router.put('/students/:id/status', authenticateJWT, requireAdmin, async (req, re
 });
 
 // POST /admin/students/export
-router.post('/students/export', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/students/export', async (req, res) => {
   try {
     const { q, status, program, class: className } = req.body || req.query || {};
     const query = buildStudentQuery({ q, status, program, className });
@@ -228,7 +262,7 @@ router.post('/students/export', authenticateJWT, requireAdmin, async (req, res) 
     const csv = toCSV(items, columns);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="students-export.csv"');
-    await audit('export-students', req.user?.username || 'system', { count: items.length });
+    await audit('export-students', 'anonymous', { count: items.length });
     return res.send(csv);
   } catch (err) {
     console.error('POST /admin/students/export error', err);
@@ -237,16 +271,17 @@ router.post('/students/export', authenticateJWT, requireAdmin, async (req, res) 
 });
 
 /* ---------------------------
-   Staffs endpoints (production-ready)
+   Staffs endpoints
    GET  /admin/staffs?q=&role=&dept=&status=&limit=&offset=
    GET  /admin/staffs/:id
+   POST /admin/staffs         (create staff)
    PUT  /admin/staffs/:id/role  (body: { role })
    PUT  /admin/staffs/:id/status (body: { status })
-   POST /admin/staffs/export  (CSV)
+   POST /admin/staffs/export (CSV)
    --------------------------- */
 
 // GET /admin/staffs
-router.get('/staffs', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/staffs', async (req, res) => {
   try {
     const { q, role, dept, status } = req.query;
     let limit = Math.min(2000, Number(req.query.limit || 200));
@@ -269,7 +304,7 @@ router.get('/staffs', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/staffs/:id
-router.get('/staffs/:id', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/staffs/:id', async (req, res) => {
   try {
     const id = req.params.id;
     let doc = null;
@@ -283,8 +318,48 @@ router.get('/staffs/:id', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
+// POST /admin/staffs  — create a new User (staff)
+router.post('/staffs', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const required = ['username', 'password', 'firstName', 'lastName', 'email', 'role'];
+    for (const k of required) {
+      if (!body[k] || String(body[k]).trim() === '') {
+        return res.status(400).json({ ok: false, message: `${k} is required` });
+      }
+    }
+
+    const existing = await User.findOne({ $or: [{ username: body.username }, { email: body.email }] }).lean().exec();
+    if (existing) return res.status(409).json({ ok: false, message: 'username or email already in use' });
+
+    const saltRounds = Number(process.env.PW_SALT_ROUNDS) || 10;
+    const passwordHash = await bcrypt.hash(String(body.password), saltRounds);
+
+    const doc = new User({
+      username: body.username,
+      email: body.email,
+      passwordHash,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      department: body.department || body.dept || null,
+      status: body.status || 'active',
+      role: body.role,
+      profile: body.profile || {}
+    });
+
+    await doc.save();
+    const out = { ...doc.toObject() };
+    delete out.passwordHash;
+    await audit('create-staff', body.username || 'unknown', { id: out._id, role: body.role });
+    return res.status(201).json({ ok: true, data: out });
+  } catch (err) {
+    console.error('POST /admin/staffs error', err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
 // PUT /admin/staffs/:id/role
-router.put('/staffs/:id/role', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/staffs/:id/role', async (req, res) => {
   try {
     const id = req.params.id;
     const { role } = req.body || {};
@@ -295,7 +370,7 @@ router.put('/staffs/:id/role', authenticateJWT, requireAdmin, async (req, res) =
     if (!updated) updated = await User.findOneAndUpdate({ username: id }, { role }, { new: true }).lean().exec().catch(() => null);
     if (!updated) return res.status(404).json({ ok: false, message: 'Not found' });
 
-    await audit('update-staff-role', req.user?.username || 'system', { id, role });
+    await audit('update-staff-role', 'anonymous', { id, role });
     return res.json({ ok: true, data: updated });
   } catch (err) {
     console.error('PUT /admin/staffs/:id/role error', err);
@@ -304,7 +379,7 @@ router.put('/staffs/:id/role', authenticateJWT, requireAdmin, async (req, res) =
 });
 
 // PUT /admin/staffs/:id/status
-router.put('/staffs/:id/status', authenticateJWT, requireAdmin, async (req, res) => {
+router.put('/staffs/:id/status', async (req, res) => {
   try {
     const id = req.params.id;
     const { status } = req.body || {};
@@ -315,7 +390,7 @@ router.put('/staffs/:id/status', authenticateJWT, requireAdmin, async (req, res)
     if (!updated) updated = await User.findOneAndUpdate({ username: id }, { status }, { new: true }).lean().exec().catch(() => null);
     if (!updated) return res.status(404).json({ ok: false, message: 'Not found' });
 
-    await audit('update-staff-status', req.user?.username || 'system', { id, status });
+    await audit('update-staff-status', 'anonymous', { id, status });
     return res.json({ ok: true, data: updated });
   } catch (err) {
     console.error('PUT /admin/staffs/:id/status error', err);
@@ -324,7 +399,7 @@ router.put('/staffs/:id/status', authenticateJWT, requireAdmin, async (req, res)
 });
 
 // POST /admin/staffs/export
-router.post('/staffs/export', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/staffs/export', async (req, res) => {
   try {
     const { q, role, dept, status } = req.body || req.query || {};
     const query = buildStaffQuery({ q, role, dept, status });
@@ -333,7 +408,7 @@ router.post('/staffs/export', authenticateJWT, requireAdmin, async (req, res) =>
     const csv = toCSV(items, columns);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="staffs-export.csv"');
-    await audit('export-staffs', req.user?.username || 'system', { count: items.length });
+    await audit('export-staffs', 'anonymous', { count: items.length });
     return res.send(csv);
   } catch (err) {
     console.error('POST /admin/staffs/export error', err);
@@ -342,7 +417,7 @@ router.post('/staffs/export', authenticateJWT, requireAdmin, async (req, res) =>
 });
 
 /* ---------------------------
-   Additional admin helpers required by admin.html (production-ready)
+   Additional admin helpers
    - GET  /admin/health
    - GET  /admin/applications?q=&status=&limit=&offset=
    - GET  /admin/resources?q=&limit=&offset=
@@ -373,7 +448,7 @@ async function dirSize(dir) {
 }
 
 // GET /admin/health
-router.get('/health', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/health', async (req, res) => {
   try {
     const dbConnected = mongoose.connection.readyState === 1;
     const activeUsers = await User.countDocuments({ status: { $ne: 'disabled' } }).catch(() => 0);
@@ -400,7 +475,7 @@ router.get('/health', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/applications
-router.get('/applications', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/applications', async (req, res) => {
   try {
     const { q, status } = req.query;
     let limit = Math.min(2000, Number(req.query.limit || 200));
@@ -430,7 +505,7 @@ router.get('/applications', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/resources
-router.get('/resources', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/resources', async (req, res) => {
   try {
     const { q } = req.query;
     let limit = Math.min(2000, Number(req.query.limit || 200));
@@ -460,22 +535,19 @@ router.get('/resources', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // POST /admin/backup
-router.post('/backup', authenticateJWT, requireAdmin, async (req, res) => {
+router.post('/backup', async (req, res) => {
   try {
-    // If a BACKUP_CMD is configured, attempt to run it asynchronously
     if (BACKUP_CMD) {
-      // spawn a shell to run the configured command
       const child = spawn(BACKUP_CMD, { shell: true, detached: true, stdio: 'ignore' });
       child.unref();
-      await audit('trigger-backup-cmd', req.user?.username || 'system', { cmd: BACKUP_CMD });
+      await audit('trigger-backup-cmd', 'anonymous', { cmd: BACKUP_CMD });
       return res.status(202).json({ ok: true, message: 'Backup started' });
     }
 
-    // Otherwise, perform a lightweight "backup" stub (log and return 202)
     setImmediate(() => {
       console.log('[admin] backup requested (no BACKUP_CMD configured)');
     });
-    await audit('trigger-backup-stub', req.user?.username || 'system', {});
+    await audit('trigger-backup-stub', 'anonymous', {});
     return res.status(202).json({ ok: true, message: 'Backup requested (stub)' });
   } catch (err) {
     console.error('POST /admin/backup error', err);
@@ -484,7 +556,7 @@ router.post('/backup', authenticateJWT, requireAdmin, async (req, res) => {
 });
 
 // GET /admin/logs?lines=200
-router.get('/logs', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/logs', async (req, res) => {
   try {
     const lines = Math.min(5000, Math.max(10, Number(req.query.lines || 200)));
     const logfile = path.join(LOG_DIR, 'access.log');
