@@ -44,6 +44,7 @@ import messagesRouter from './routes/messages.js';
 import assignmentsRouter from './routes/assignments.js';
 import studentsRouter from './routes/students.js';
 import resultsRouter from './routes/results.js';
+import adminRouter from './routes/admin.js';
 
 // create directories if needed
 fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -105,7 +106,7 @@ const authLimiter = rateLimit({
 // --- Static file serving ---
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d' }));
-
+app.use('/api/admin', adminRouter);
 // --- Health & readiness ---
 app.get('/healthz', (req, res) => res.status(200).json({ ok: true, uptime: process.uptime() }));
 app.get('/ready', (req, res) => {
